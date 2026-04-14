@@ -9,6 +9,7 @@ __pycache__/
 # Data
 data/
 !data/*.gitkeep
+data/gcp/*.json
 
 #dbt
 dbt/target
@@ -39,3 +40,6 @@ mlflow.db
 # Airflow
 airflow/config/
 airflow/logs/
+
+# Terraform
+iac/.terraform/
