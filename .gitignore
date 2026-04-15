@@ -43,3 +43,7 @@ airflow/logs/
 
 # Terraform
 iac/.terraform/
+iac/state_backups/
+
+# Generated presentation artifacts
+docs/.pptx_rendered/
