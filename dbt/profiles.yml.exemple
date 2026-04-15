@@ -9,7 +9,7 @@ mix_energy_profile:
       keyfile: "{{ env_var('GOOGLE_APPLICATION_CREDENTIALS') }}"   # Path to the service account key file
       threads: 1
       timeout_seconds: 300
-      location: "{{ env_var('LOCATION') }}"
+      location: "{{ env_var('BIGQUERY_LOCATION', env_var('TF_VAR_location', env_var('LOCATION'))) }}"
     prod:
       type: bigquery
       method: service-account
@@ -18,4 +18,4 @@ mix_energy_profile:
       keyfile: "{{ env_var('GOOGLE_APPLICATION_CREDENTIALS') }}"   # Path to the service account key file
       threads: 1
       timeout_seconds: 300
-      location: "{{ env_var('LOCATION') }}"
+      location: "{{ env_var('BIGQUERY_LOCATION', env_var('TF_VAR_location', env_var('LOCATION'))) }}"

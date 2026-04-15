@@ -329,6 +329,26 @@ resource "google_project_iam_member" "vm_artifact_registry_reader" {
   ]
 }
 
+resource "google_compute_network" "mix_energie_network" {
+  count                   = var.TF_VAR_bootstrap_only ? 0 : 1
+  name                    = var.TF_VAR_vm_network_name
+  auto_create_subnetworks = false
+  project                 = google_project.mix_energie_gcp.project_id
+
+  depends_on = [google_project_service.compute]
+}
+
+resource "google_compute_subnetwork" "mix_energie_subnetwork" {
+  count         = var.TF_VAR_bootstrap_only ? 0 : 1
+  name          = var.TF_VAR_vm_subnetwork_name
+  ip_cidr_range = var.TF_VAR_vm_subnetwork_cidr
+  region        = var.TF_VAR_vm_subnetwork_region
+  network       = google_compute_network.mix_energie_network[0].id
+  project       = google_project.mix_energie_gcp.project_id
+
+  depends_on = [google_compute_network.mix_energie_network]
+}
+
 resource "google_bigquery_dataset" "dev_mix_energie_dataset" {
   count                      = var.TF_VAR_bootstrap_only ? 0 : 1
   dataset_id                 = "dev_mix_energie"
@@ -411,7 +431,8 @@ resource "google_compute_instance" "vm_mix_energie" {
   }
 
   network_interface {
-    network = "default"
+    network    = google_compute_network.mix_energie_network[0].id
+    subnetwork = google_compute_subnetwork.mix_energie_subnetwork[0].id
     access_config {
     }
   }
@@ -425,6 +446,7 @@ resource "google_compute_instance" "vm_mix_energie" {
 
   depends_on = [
     google_project_service.compute,
+    google_compute_subnetwork.mix_energie_subnetwork,
     google_project_iam_member.vm_artifact_registry_reader,
   ]
 }

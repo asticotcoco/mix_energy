@@ -10,9 +10,15 @@ PROJECT_BUCKET_NAME=$(awk -F '"' '/^TF_VAR_project_bucket_name[[:space:]]*=/{pri
 ARTIFACT_REGISTRY_LOCATION=$(awk -F '"' '/^TF_VAR_artifact_registry_location[[:space:]]*=/{print $2}' auto.tfvars)
 VM_NAME=$(awk -F '"' '/^TF_VAR_vm_name[[:space:]]*=/{print $2}' auto.tfvars)
 VM_ZONE=$(awk -F '"' '/^TF_VAR_vm_zone[[:space:]]*=/{print $2}' auto.tfvars)
+VM_NETWORK_NAME=$(awk -F '"' '/^TF_VAR_vm_network_name[[:space:]]*=/{print $2}' auto.tfvars)
+VM_SUBNETWORK_NAME=$(awk -F '"' '/^TF_VAR_vm_subnetwork_name[[:space:]]*=/{print $2}' auto.tfvars)
+VM_SUBNETWORK_REGION=$(awk -F '"' '/^TF_VAR_vm_subnetwork_region[[:space:]]*=/{print $2}' auto.tfvars)
 ARTIFACT_REGISTRY_LOCATION=${ARTIFACT_REGISTRY_LOCATION:-europe-west1}
 VM_NAME=${VM_NAME:-vm-mix-energie}
 VM_ZONE=${VM_ZONE:-europe-west1-b}
+VM_NETWORK_NAME=${VM_NETWORK_NAME:-mix-energy-network}
+VM_SUBNETWORK_NAME=${VM_SUBNETWORK_NAME:-mix-energy-subnetwork}
+VM_SUBNETWORK_REGION=${VM_SUBNETWORK_REGION:-europe-west1}
 
 if [[ -z "$PROJECT_ID" || -z "$GCP_USER_EMAIL" || -z "$PROJECT_BUCKET_NAME" ]]; then
 	echo "Impossible de lire TF_VAR_project_id, TF_VAR_project_bucket_name ou TF_VAR_gcp_user_email depuis auto.tfvars." >&2
@@ -39,7 +45,11 @@ import_if_exists() {
 }
 
 echo "Bootstrap Terraform pour $PROJECT_ID"
-terraform apply -auto-approve -var-file="auto.tfvars" -var='TF_VAR_bootstrap_only=true'
+if gcloud projects describe "$PROJECT_ID" >/dev/null 2>&1; then
+	echo "Projet $PROJECT_ID deja present, bootstrap Terraform saute pour eviter toute destruction non voulue."
+else
+	terraform apply -auto-approve -var-file="auto.tfvars" -var='TF_VAR_bootstrap_only=true'
+fi
 
 echo "Activation explicite des APIs principales pour $PROJECT_ID"
 gcloud services enable \
@@ -66,6 +76,8 @@ import_if_exists "google_service_account.vm_mix_energie[0]" "projects/$PROJECT_I
 import_if_exists "google_artifact_registry_repository.docker[0]" "projects/$PROJECT_ID/locations/$ARTIFACT_REGISTRY_LOCATION/repositories/mix-energie-docker" "gcloud artifacts repositories describe mix-energie-docker --location=$ARTIFACT_REGISTRY_LOCATION --project=$PROJECT_ID"
 import_if_exists "google_artifact_registry_repository.standard[0]" "projects/$PROJECT_ID/locations/$ARTIFACT_REGISTRY_LOCATION/repositories/mix-energie-python" "gcloud artifacts repositories describe mix-energie-python --location=$ARTIFACT_REGISTRY_LOCATION --project=$PROJECT_ID"
 import_if_exists "google_storage_bucket.mix_energie_bucket[0]" "$PROJECT_BUCKET_NAME" "gcloud storage buckets describe gs://$PROJECT_BUCKET_NAME"
+import_if_exists "google_compute_network.mix_energie_network[0]" "projects/$PROJECT_ID/global/networks/$VM_NETWORK_NAME" "gcloud compute networks describe $VM_NETWORK_NAME --project=$PROJECT_ID"
+import_if_exists "google_compute_subnetwork.mix_energie_subnetwork[0]" "projects/$PROJECT_ID/regions/$VM_SUBNETWORK_REGION/subnetworks/$VM_SUBNETWORK_NAME" "gcloud compute networks subnets describe $VM_SUBNETWORK_NAME --region=$VM_SUBNETWORK_REGION --project=$PROJECT_ID"
 
 BIGQUERY_DATASET_IMPORTS=(
 	"google_bigquery_dataset.dev_mix_energie_dataset[0]:dev_mix_energie"

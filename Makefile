@@ -36,6 +36,10 @@ start_fastapi_dev:
 ########################################################################################################################
 
 
+.PHONY: init_local_airflow
+
+AIRFLOW_COMPOSE = docker compose --env-file .env -f airflow/docker-compose.yaml
+
 .PHONY: build_predict
 build_predict:
 	@echo "Build the predict module";
@@ -54,7 +58,7 @@ build_local_fastapi: build_predict
 
 .PHONY: build_local_airflow
 build_local_airflow: build_predict
-	docker compose -f airflow/docker-compose.yaml build
+	$(AIRFLOW_COMPOSE) build
 
 .PHONY: build_local_streamlit
 build_local_streamlit:
@@ -76,13 +80,17 @@ run_local_fastapi:
 			-e MLFLOW_TRACKING_URI=${MLFLOW_TRACKING_URI} \
 			${IMAGE}
 
+.PHONY: init_local_airflow
+init_local_airflow:
+	$(AIRFLOW_COMPOSE) up airflow-init
+
 .PHONY: run_local_airflow
 run_local_airflow:
-	docker compose -f airflow/docker-compose.yaml up -d
+	$(AIRFLOW_COMPOSE) up -d
 
 .PHONY: stop_local_airflow
 stop_local_airflow:
-	docker compose -f airflow/docker-compose.yaml down
+	$(AIRFLOW_COMPOSE) down
 
 .PHONY: run_local_streamlit
 run_local_streamlit:

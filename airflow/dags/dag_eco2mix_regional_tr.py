@@ -10,6 +10,10 @@ from airflow.providers.google.cloud.hooks.gcs import GCSHook
 from airflow.timetables.trigger import MultipleCronTriggerTimetable
 from airflow.providers.standard.operators.bash import BashOperator
 
+from mix_energy.airflow_dbt import (
+    build_dbt_run_command,
+    validate_dbt_target_datasets,
+)
 from mix_energy.bucket_to_bigquery_airflow import run_transfer as _run_transfer
 from mix_energy.eco2mix_ingest import retrieve_csv as _retrieve_csv
 
@@ -69,6 +73,10 @@ def dag_eco2mix_regional_tr():
     def transfer_csv_from_bucket_to_bigquery(file_prefix: str) -> None:
         _run_transfer(file_prefix=file_prefix, gcp_conn_id=GCP_CONN_ID)
 
+    @task(task_id="check_dbt_target_datasets")
+    def check_dbt_target_datasets() -> None:
+        validate_dbt_target_datasets(["gold"], gcp_conn_id=GCP_CONN_ID)
+
     check_bucket_connection_task: Any = check_bucket_connection()
     ingest_csv_to_bucket_task: Any = ingest_csv_to_bucket(
         bucket_name=check_bucket_connection_task,
@@ -77,20 +85,21 @@ def dag_eco2mix_regional_tr():
     transfer_csv_from_bucket_to_bigquery_task: Any = (
         transfer_csv_from_bucket_to_bigquery(file_prefix=FILE_PREFIX)
     )
+    check_dbt_target_datasets_task: Any = check_dbt_target_datasets()
 
     dbt_eco2mix_regional_tr = BashOperator(
         task_id="dbt_eco2mix_regional_tr",
-        bash_command=f"""
-        cd {DBT_DIR} &&
-        dbt run --select reg_tr_agre_j --target prod &&
-        dbt run --select reg_tr_predi --target prod
-        """,
+        bash_command=build_dbt_run_command(
+            ["reg_tr_agre_j", "reg_tr_predi"],
+            dbt_dir=DBT_DIR,
+        ),
     )
 
     (
         check_bucket_connection_task
         >> ingest_csv_to_bucket_task
         >> transfer_csv_from_bucket_to_bigquery_task
+        >> check_dbt_target_datasets_task
         >> dbt_eco2mix_regional_tr
     )
 

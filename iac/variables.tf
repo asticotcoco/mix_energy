@@ -29,6 +29,30 @@ variable "TF_VAR_vm_machine_type" {
   default     = "e2-micro"
 }
 
+variable "TF_VAR_vm_network_name" {
+  description = "Nom du reseau VPC attache a la VM"
+  type        = string
+  default     = "mix-energy-network"
+}
+
+variable "TF_VAR_vm_subnetwork_name" {
+  description = "Nom du sous-reseau attache a la VM"
+  type        = string
+  default     = "mix-energy-subnetwork"
+}
+
+variable "TF_VAR_vm_subnetwork_region" {
+  description = "Region du sous-reseau de la VM"
+  type        = string
+  default     = "europe-west1"
+}
+
+variable "TF_VAR_vm_subnetwork_cidr" {
+  description = "Plage CIDR du sous-reseau de la VM"
+  type        = string
+  default     = "10.12.0.0/24"
+}
+
 variable "TF_VAR_vm_image_family" {
   description = "Famille d'image pour le disque boot"
   type        = string
