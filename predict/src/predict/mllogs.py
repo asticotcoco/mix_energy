@@ -6,7 +6,7 @@ from sklearn.base import BaseEstimator
 from predict import get_logger
 from datetime import date
 
-MLFLOW_TRACKING_URI = os.environ.get("MLFLOW_TRACKING_URI", "http://localhost:5000")
+MLFLOW_TRACKING_URI = os.environ.get("MLFLOW_TRACKING_URI", "http://localhost:8503")
 
 
 # -------------------------------------------------------------------------

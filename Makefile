@@ -66,7 +66,7 @@ build_local_streamlit:
 
 .PHONY: start_mlflow_server
 start_mlflow_server:
-	mlflow server --host=0.0.0.0 --port=5000
+	mlflow server --host=0.0.0.0 --port=8503
 
 .PHONY: run_local_fastapi
 run_local_fastapi:

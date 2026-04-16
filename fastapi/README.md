@@ -16,7 +16,7 @@ The service reads:
 - `PROJECT_ID`
 - `DATASET_ID_PROD` by default, falling back to `DATASET_ID_DEV`
 - `GOOGLE_APPLICATION_CREDENTIALS`, or `GOOGLE_APPLICATION_CREDENTIALS_CONTAINER` if the first one is not set
-- `MLFLOW_TRACKING_URI`, by default use 'http:\\\\localhost:5000'
+- `MLFLOW_TRACKING_URI`, by default use 'http:\\\\localhost:8503'
 
 ## Query pattern
 

@@ -116,11 +116,11 @@ services:
         /home/airflow/.local/bin/mlflow server \
           --host 0.0.0.0 \
           --port 5000 \
-          --allowed-hosts mlflow,mlflow:5000,localhost,localhost:5000,127.0.0.1,127.0.0.1:5000 \
+          --allowed-hosts mlflow,mlflow:5000,localhost,localhost:8503,127.0.0.1,127.0.0.1:8503 \
           --backend-store-uri sqlite:////opt/mlflow/mlflow.db \
           --artifacts-destination /opt/mlflow/artifacts
     ports:
-      - "5000:5000"
+      - "8503:5000"
     volumes:
       - mlflow-data-volume:/opt/mlflow
     healthcheck:

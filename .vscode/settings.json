@@ -10,9 +10,9 @@
       "label": "Streamlit Dashboard",
       "onAutoForward": "openBrowserOnce"
     },
-    "5000": {
+    "8503": {
       "label": "MLflow UI",
-      "onAutoForward": "notify"
+      "onAutoForward": "openBrowserOnce"
     },
     "8890": {
       "label": "FastAPI API",
