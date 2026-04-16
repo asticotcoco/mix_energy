@@ -227,7 +227,7 @@ Les données sont chargées dans BigQuery puis transformées via dbt. Le projet 
 - une couche silver pour nettoyer, typer et homogénéiser ;
 - une couche gold pour agréger, calculer les indicateurs et préparer les données de prédiction.
 
-Cette séparation est importante. Elle montre un travail de structuration analytique et non un simple empilement de scripts. Une couche bronze
+Cette séparation est importante. Elle montre un travail de structuration analytique et non un simple empilement de scripts. En amont, une couche bronze existe également sous la forme des tables brutes chargées dans BigQuery et déclarées comme sources dbt, avant les traitements de normalisation et d'agrégation.
 
 3.3 Couche exposition 
 Le service FastAPI fournit une couche d'accès standardisé aux données consolidées. L'API permet de :
@@ -417,6 +417,12 @@ Cet extrait montre plusieurs éléments de fond :
 L'une des preuves les plus fortes du travail de fond se trouve dans les modèles SQL dbt. Les fichiers du dossier dbt/models/gold montrent que les données ne sont pas seulement stockées mais structurées pour l'analyse et la prédiction.
 
 Le modèle dbt reg_tr_predi.sql prépare par exemple des variables de travail à partir d'historiques de consommation. On y trouve des fenêtres analytiques, des extractions temporelles et des moyennes glissantes.
+
+7.0 Couche Bronze et sources brutes
+
+Avant la couche silver, le projet s'appuie sur une couche bronze qui correspond aux tables brutes chargées dans BigQuery par les scripts d'ingestion et les DAGs Airflow. Dans ce dépôt, cette couche bronze n'est pas matérialisée sous la forme d'un dossier dbt/models/bronze avec des modèles intermédiaires dédiés. Elle est représentée dans dbt par des sources déclarées dans schema.yml, par exemple nat_source, reg_source, meteo_source et air_quality_source. Ces sources pointent vers les tables importées sans transformation métier lourde, comme eco2mix_national_tr, eco2mix_regional_tr, meteo_paris ou air_quality_paris.
+
+Cette couche bronze joue un rôle essentiel dans l'architecture. Elle conserve la donnée au plus proche de sa structure d'origine, ce qui garantit la traçabilité des imports, facilite les reprises sur incident et permet de rejouer les transformations aval sans relancer toute l'ingestion. Elle sert aussi de point d'entrée unique pour dbt via la fonction source(), ce qui rend explicites les dépendances entre données brutes et modèles transformés. Dans plusieurs modèles du projet, notamment certains agrégats gold temps réel et les tables de préparation à la prédiction, la lecture part directement de cette couche bronze avec des conversions contrôlées comme SAFE_CAST ou la macro safe_float64_from_raw lorsque la donnée brute est encore hétérogène ou partiellement textuelle.
 
 7.1 Modèles Silver
 

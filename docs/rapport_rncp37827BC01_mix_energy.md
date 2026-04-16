@@ -44,7 +44,9 @@ La Base Carbone ADEME joue un role de referentiel metier. Elle apporte les facte
 
 Dans la vision cible du projet, l'integration de donnees meteorologiques constitue une extension naturelle. Des services comme Open-Meteo permettent de recuperer a la fois des historiques et des previsions de temperature, vent, precipitations et humidite, utiles pour expliquer et predire les variations de consommation electrique.
 
-Une autre extension pertinente consiste a integrer des donnees de qualite de l'air, par exemple via Atmo Data, afin de rapprocher l'intensite carbone du mix electrique et les indicateurs territoriaux de pollution atmospherique. Cette extension renforce la portee analytique du projet sans etre presentee ici comme entierement livree dans le depot actuel.
+Une autre extension pertinente consiste a integrer des donnees de qualite de l'air, par exemple via Atmo Data, afin de rapprocher l'intensite carbone du mix electrique et les indicateurs territoriaux de pollution atmospherique. Cette extension renforce la portee analytique du projet.
+
+Cette extension a depuis ete concretement mise en oeuvre dans le projet. Deux modules d'ingestion Python dedies ont ete ajoutes pour recuperer des donnees meteo par ville et des donnees de qualite de l'air par ville et par zone ATMO. Les jeux collectes sont historises, charges dans BigQuery puis transformes avec dbt dans des tables de travail nommees meteo_by_city et air_quality_by_city. Le perimetre ne se limite donc plus aux seules donnees energetiques et carbone : il inclut desormais un enrichissement environnemental exploitable dans l'API et dans le dashboard.
 
 ### 0.6 Architecture fonctionnelle cible
 
@@ -84,7 +86,7 @@ regional_def = get_eco2mix("eco2mix-regional-cons-def")
 
 Sur le plan technique, le projet repose sur une architecture modulaire articulee autour de plusieurs composants specialises : ingestion Python, stockage intermediaire dans GCP Storage, transformations dbt, stockage analytique dans BigQuery, orchestration Airflow, exposition des donnees via FastAPI et restitution dans Streamlit. L'infrastructure GCP et le provisioning Terraform donnent a cette chaine une dimension industrialisable.
 
-Dans la cible d'architecture complete, des briques supplementaires peuvent renforcer le dispositif, notamment des controles de qualite de donnees formalises, une chaine CI/CD et des enrichissements multi-sources autour de la meteo et de la qualite de l'air. Ces composants sont presentes comme extensions ou feuille de route lorsque leur implementation n'est pas integralement visible dans le depot actuel.
+Dans la version actuellement livree, les enrichissements multi-sources autour de la meteo et de la qualite de l'air ne relevent plus seulement de la feuille de route. Des briques dediees ont ete ajoutees pour ces donnees : modules d'ingestion Python, DAGs Airflow, modeles dbt silver et gold, exposition multi-couches via FastAPI et page Streamlit d'observatoire environnemental. L'architecture visible dans le depot couvre donc deja une partie importante de cette cible et renforce la profondeur technique du projet.
 
 Le projet presente enfin un fort alignement avec les attendus pedagogiques et RNCP. Il couvre l'extraction automatisee de donnees multi-sources, la structuration et l'homogeneisation des jeux de donnees, les transformations analytiques SQL, l'orchestration de pipelines, l'exposition de services REST et la restitution visuelle dans un dashboard. Cette articulation renforce la lisibilite du projet pour un jury et valorise sa coherence de bout en bout.
 
@@ -129,6 +131,7 @@ Les DAGs Airflow presents dans le dossier airflow/dags pilotent les traitements.
 
 - la verification de la disponibilite du bucket de stockage ;
 - l'ingestion des fichiers CSV depuis des jeux de donnees externes ;
+- l'ingestion des donnees meteo et qualite de l'air pour plusieurs villes ;
 - le transfert des fichiers vers BigQuery ;
 - le declenchement des transformations dbt ;
 - l'entrainement des modeles de prediction.
@@ -140,16 +143,20 @@ Les fichiers les plus representatifs sont :
 - airflow/dags/dag_eco2mix_national_cons_def.py
 - airflow/dags/dag_eco2mix_regional_tr.py
 - airflow/dags/dag_eco2mix_regional_cons_def.py
+- airflow/dags/dag_meteo.py
+- airflow/dags/dag_air_quality.py
 - airflow/dags/dag_train_model.py
 
 ### 3.2 Couche stockage et transformation
 
-Les donnees sont chargees dans BigQuery puis transformeес via dbt. Le projet dbt distingue au minimum deux couches de travail :
+Les donnees sont chargees dans BigQuery puis transformees via dbt. Le projet dbt distingue au minimum deux couches de travail :
 
 - une couche silver pour nettoyer, typer et homogeniser ;
 - une couche gold pour agreger, calculer les indicateurs et preparer les donnees de prediction.
 
 Cette separation est importante. Elle montre un travail de structuration analytique et non un simple empilement de scripts.
+
+Cette logique a ete etendue aux donnees environnementales. La couche silver integre des tables detaillees meteo_by_city et air_quality_by_city, qui conservent la granularite horaire ou par zone necessaire aux analyses fines. La couche gold ajoute ensuite des syntheses quotidiennes par ville via gold_meteo_by_city.sql et gold_air_quality_by_city.sql, afin d'alimenter des usages de restitution et de pilotage a plus faible granularite.
 
 ### 3.3 Couche exposition
 
@@ -246,6 +253,8 @@ Cet extrait est important parce qu'il montre une logique defensive et une prise 
 
 Les DAGs structurent le traitement. Ils combinent verification de connexion, ingestion, transfert vers BigQuery et execution de commandes dbt. Le code montre aussi des horaires de declenchement precis, adaptes au type de donnees.
 
+Deux DAGs supplementaires ont ete ajoutes pour l'enrichissement environnemental. dag_meteo.py orchestre la collecte des donnees Open-Meteo par ville, leur depot dans GCS, leur chargement dans BigQuery puis l'execution du modele dbt meteo_by_city. dag_air_quality.py suit la meme logique pour les donnees ATMO, avec une gestion defensive des reponses non JSON afin d'eviter qu'une reponse amont invalide ne fasse echouer l'ensemble du flux.
+
 ### Extrait de code 2 - Entrainement des modeles via Airflow
 
 ```python
@@ -281,6 +290,10 @@ Cet extrait montre plusieurs elements de fond :
 L'une des preuves les plus fortes du travail de fond se trouve dans les modeles SQL dbt. Les fichiers du dossier dbt/models/gold montrent que les donnees ne sont pas seulement stockees mais structurees pour l'analyse et la prediction.
 
 Le modele dbt reg_tr_predi.sql prepare par exemple des variables de travail a partir d'historiques de consommation. On y trouve des fenetres analytiques, des extractions temporelles et des moyennes glissantes.
+
+La couche silver ne se limite plus aux donnees energetiques historiques. Le projet ajoute aussi meteo_by_city.sql, qui unifie les sources meteo par ville et typise la colonne temporelle time, ainsi que air_quality_by_city.sql, qui normalise les dates de diffusion et d'echeance, les coordonnees et les indices de pollution. Ces modeles constituent la base detaillee reutilisable par les visualisations fines et la cartographie.
+
+La couche gold a egalement ete etendue aux nouvelles donnees environnementales. gold_meteo_by_city.sql produit une synthese quotidienne par ville a partir des observations horaires, avec des indicateurs comme les temperatures moyenne, minimale et maximale, les cumuls de precipitations ou la vitesse moyenne du vent. gold_air_quality_by_city.sql produit une synthese quotidienne de la qualite de l'air par ville en conservant le dernier snapshot par zone avant agregation, puis expose des metriques comme avg_quality_code, max_quality_code, last_update_at ou worst_quality_label.
 
 ### Extrait de code 3 - Feature engineering SQL
 
@@ -344,6 +357,8 @@ Le service FastAPI n'est pas uniquement un point d'entree minimal. Le code montr
 - une gestion propre des erreurs ;
 - des filtres dynamiques sur les requetes.
 
+Une evolution importante a consiste a exposer plusieurs couches de donnees via un parametre layer. L'API peut desormais interroger les tables raw, silver ou gold selon le besoin. Cette evolution est utilisee pour servir les nouvelles tables meteo_by_city et air_quality_by_city, avec deux usages distincts : des donnees silver detaillees pour les lectures fines ou cartographiques, et des donnees gold quotidiennes pour les syntheses et les indicateurs consolides.
+
 ### Extrait de code 5 - Parsing et validation des filtres
 
 ```python
@@ -396,6 +411,8 @@ Le front Streamlit propose une navigation entre plusieurs pages thematiques. Le 
 Le front charge les donnees a la demande, page par page, ce qui limite le cout de chargement initial. Cela montre une reflexion sur les performances et l'ergonomie.
 
 Le tableau de bord n'est donc pas seulement demonstratif : il sert de couche de lecture fonctionnelle au-dessus de l'API.
+
+Le front a ete enrichi par une cinquieme page dediee a l'observatoire environnemental. Cette page croise des donnees meteo et des donnees de qualite de l'air pour une ville choisie. L'implementation repose sur une strategie hybride coherente avec les tables dbt creees : la meteo reste consommee en silver afin de conserver la granularite horaire necessaire aux courbes, tandis que la synthese quotidienne de qualite de l'air est consommee en gold pour alimenter les KPI et la heatmap. La carte ATMO detaillee, qui necessite encore les coordonnees et le niveau par zone, reste quant a elle branchee sur la couche silver.
 
 ## 10. Prediction et machine learning
 
@@ -485,13 +502,20 @@ Ce volet infrastructure renforce tres clairement la valeur du projet pour la cer
 
 Le depot contient des tests unitaires dans plusieurs sous-projets. Cette presence est importante car elle montre un souci de verification et de robustesse.
 
+Cette logique de test a egalement ete etendue aux nouveaux flux environnementaux et a l'exposition multi-couches de l'API. Des tests unitaires verifient la collecte meteo, la collecte qualite de l'air, la structure des DAGs associes ainsi que le support du parametre layer dans FastAPI.
+
 Exemples de fichiers :
 
 - fastapi/tests/unit/test_bigquery_service.py
+- fastapi/tests/unit/test_main.py
 - ingest_dbt/tests/unit/test_eco2mix_ingest.py
 - ingest_dbt/tests/unit/test_bigquery_loader.py
 - ingest_dbt/tests/unit/test_dag_eco2mix_national_tr.py
 - ingest_dbt/tests/unit/test_dag_eco2mix_regional_tr.py
+- ingest_dbt/tests/unit/test_meteo_ingest.py
+- ingest_dbt/tests/unit/test_air_quality_ingest.py
+- ingest_dbt/tests/unit/test_dag_meteo.py
+- ingest_dbt/tests/unit/test_dag_air_quality.py
 
 ### Extrait de code 11 - Test de requete BigQuery securisee
 
@@ -557,6 +581,7 @@ Le projet Mix Energy produit plusieurs resultats concrets :
 - une chaine de collecte et de transformation exploitable ;
 - des tables analytiques orientees metier ;
 - un calcul de KPIs autour de la production, du mix et du CO2 ;
+- un enrichissement environnemental par la meteo et la qualite de l'air ;
 - une API de consultation des donnees ;
 - une interface utilisateur de restitution ;
 - une base technique pour des predictions de consommation ;
@@ -581,6 +606,8 @@ Pour une certification RNCP37827BC01, ce dossier permet donc de mettre en avant 
 - airflow/dags/dag_eco2mix_national_cons_def.py
 - airflow/dags/dag_eco2mix_regional_tr.py
 - airflow/dags/dag_eco2mix_regional_cons_def.py
+- airflow/dags/dag_meteo.py
+- airflow/dags/dag_air_quality.py
 - airflow/dags/dag_train_model.py
 - airflow/docker-compose.yaml
 
@@ -588,9 +615,13 @@ Pour une certification RNCP37827BC01, ce dossier permet donc de mettre en avant 
 
 - ingest_dbt/src/mix_energy/eco2mix_ingest.py
 - ingest_dbt/src/mix_energy/base_carbone_ingest.py
+- ingest_dbt/src/mix_energy/meteo_ingest.py
+- ingest_dbt/src/mix_energy/air_quality_ingest.py
 - ingest_dbt/src/mix_energy/bucket_to_bigquery_airflow.py
 - dbt/models/silver/eco2mix_national_cons_def_histo.sql
 - dbt/models/silver/eco2mix_regional_cons_def_histo.sql
+- dbt/models/silver/meteo_by_city.sql
+- dbt/models/silver/air_quality_by_city.sql
 - dbt/models/gold/nat_cons_agre_j.sql
 - dbt/models/gold/nat_tr_agre_j.sql
 - dbt/models/gold/nat_tr_predi.sql
@@ -598,6 +629,8 @@ Pour une certification RNCP37827BC01, ce dossier permet donc de mettre en avant 
 - dbt/models/gold/reg_tr_agre_j.sql
 - dbt/models/gold/reg_tr_predi.sql
 - dbt/models/gold/kpi.sql
+- dbt/models/gold/gold_meteo_by_city.sql
+- dbt/models/gold/gold_air_quality_by_city.sql
 
 ### API et front
 
@@ -610,6 +643,7 @@ Pour une certification RNCP37827BC01, ce dossier permet donc de mettre en avant 
 - front-streamlit/dashboard/pages/2_national_temps_reel.py
 - front-streamlit/dashboard/pages/3_regional_historique.py
 - front-streamlit/dashboard/pages/4_regional_temps_reel.py
+- front-streamlit/dashboard/pages/5_environnement.py
 
 ### Prediction et infrastructure
 
