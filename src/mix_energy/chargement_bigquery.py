@@ -116,6 +116,35 @@ def table_exists(bq_client: Any, table_id: str) -> bool:
         return False
 
 
+def blob_contains_data_rows(blob: Any) -> bool:
+    """
+    Retourne True si le CSV contient au moins une ligne de donnees apres l'en-tete.
+    En cas d'impossibilite d'inspection, le chargement continue par precaution.
+    """
+    try:
+        with blob.open("rt", encoding="utf-8") as csv_stream:
+            header_seen = False
+
+            for line in csv_stream:
+                if not line.strip():
+                    continue
+
+                if not header_seen:
+                    header_seen = True
+                    continue
+
+                return True
+    except Exception as exc:
+        logger.warning(
+            "Impossible d'inspecter %s avant chargement: %s. Le chargement continue par precaution.",
+            getattr(blob, "name", "blob-inconnu"),
+            exc,
+        )
+        return True
+
+    return False
+
+
 def iter_csv_blob_names(
     storage_client: Any,
     bucket_name: str,
@@ -125,6 +154,7 @@ def iter_csv_blob_names(
     bucket = storage_client.bucket(bucket_name)
     matched_blobs = []
     normalized_file_prefix = file_prefix.lower() if file_prefix else None
+    skipped_header_only = []
 
     for blob in bucket.list_blobs(prefix=prefix or None):
         if not blob.name.endswith(".csv"):
@@ -136,7 +166,18 @@ def iter_csv_blob_names(
         ):
             continue
 
+        if not blob_contains_data_rows(blob):
+            skipped_header_only.append(blob.name)
+            continue
+
         matched_blobs.append(blob.name)
+
+    if skipped_header_only:
+        logger.warning(
+            "Chargement ignore pour %s fichier(s) CSV sans ligne de donnees: %s",
+            len(skipped_header_only),
+            ", ".join(skipped_header_only),
+        )
 
     return matched_blobs
 
