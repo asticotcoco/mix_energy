@@ -14,9 +14,9 @@
       "label": "MLflow UI",
       "onAutoForward": "notify"
     },
-    "8888": {
-      "label": "FastAPI",
-      "onAutoForward": "notify"
+    "8890": {
+      "label": "FastAPI API",
+      "onAutoForward": "openBrowserOnce"
     }
   }
 }

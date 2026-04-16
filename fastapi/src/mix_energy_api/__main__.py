@@ -4,7 +4,7 @@ import uvicorn
 
 
 def main() -> None:
-    uvicorn.run("mix_energy_api.main:app", host="0.0.0.0", port=8888, reload=False)
+    uvicorn.run("mix_energy_api.main:app", host="0.0.0.0", port=8890, reload=False)
 
 
 if __name__ == "__main__":

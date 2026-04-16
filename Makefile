@@ -23,11 +23,11 @@ setup :
 ########################################################################################################################
 .PHONY: start_fastapi
 start_fastapi:
-	fastapi run fastapi/main.py --reload --port 8888
+	fastapi run fastapi/main.py --reload --port 8890
 
 .PHONY: start_fastapi_dev
 start_fastapi_dev:
-	fastapi dev fastapi/main.py --reload --port 8888
+	fastapi dev fastapi/main.py --reload --port 8890
 
 ########################################################################################################################
 

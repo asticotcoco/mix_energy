@@ -11,7 +11,7 @@ import requests
 from dotenv import load_dotenv
 
 
-DEFAULT_BASE_URL = "http://localhost:8888"
+DEFAULT_BASE_URL = "http://localhost:8890"
 DEFAULT_LAYER = "gold"
 
 

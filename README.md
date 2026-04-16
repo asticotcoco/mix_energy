@@ -218,8 +218,8 @@ Puis éditer le fichier **.env** et renseigner chaque variable
 
 ### Commandes Serveur (développement)
 
-> - **start_fastapi** : lance l'application exposant les API REST sur le port 8888
-> - **start_fastapi_dev**: lance l'application exposant les API REST en mode ***"dev"*** sur le port 8888
+> - **start_fastapi** : lance l'application exposant les API REST sur le port 8890
+> - **start_fastapi_dev**: lance l'application exposant les API REST en mode ***"dev"*** sur le port 8890
 > - **start_mlflow_server**: démarre le serveur MLFLOW sur le port 5000
 
 ### Commandes Docker

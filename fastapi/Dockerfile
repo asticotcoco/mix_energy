@@ -18,6 +18,6 @@ RUN pip --no-cache-dir install *.whl
 RUN poetry config virtualenvs.create false \
     && poetry install --only main --no-interaction --no-ansi
 
-EXPOSE 8888
+EXPOSE 8890
 
-CMD ["uvicorn", "mix_energy_api.main:app", "--host", "0.0.0.0", "--port", "8888"]
+CMD ["uvicorn", "mix_energy_api.main:app", "--host", "0.0.0.0", "--port", "8890"]

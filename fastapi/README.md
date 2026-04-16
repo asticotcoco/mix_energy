@@ -9,7 +9,7 @@ Install dependencies from this folder and load the repository `.env` file:
 ```bash
 cd fastapi
 poetry install
-poetry run uvicorn mix_energy_api.main:app --reload --host 0.0.0.0 --port 8888
+poetry run uvicorn mix_energy_api.main:app --reload --host 0.0.0.0 --port 8890
 ```
 
 The service reads:
@@ -30,15 +30,15 @@ The service reads:
 Example URLs:
 
 ```bash
-curl http://localhost:8888/tables
-curl 'http://localhost:8888/tables?layer=silver'
-curl http://localhost:8888/tables/kpi/columns
-curl 'http://localhost:8888/tables/meteo_by_city/columns?layer=silver'
-curl 'http://localhost:8888/tables/nat_cons_agre_j?columns=*' # All columns
-curl 'http://localhost:8888/tables/air_quality_by_city?layer=silver&limit=10'
-curl 'http://localhost:8888/tables/nat_cons_agre_j?columns=date,region&filters=[{"field":"region","operator":"eq","value":"FR"}]&limit=10'
-curl -X 'POST' 'http://localhost:8888/predict/national' -H 'accept: application/json' -d ''
-curl -X 'POST' 'http://localhost:8888/predict/region?code_insee_region=11' -H 'accept: application/json' -d ''
+curl http://localhost:8890/tables
+curl 'http://localhost:8890/tables?layer=silver'
+curl http://localhost:8890/tables/kpi/columns
+curl 'http://localhost:8890/tables/meteo_by_city/columns?layer=silver'
+curl 'http://localhost:8890/tables/nat_cons_agre_j?columns=*' # All columns
+curl 'http://localhost:8890/tables/air_quality_by_city?layer=silver&limit=10'
+curl 'http://localhost:8890/tables/nat_cons_agre_j?columns=date,region&filters=[{"field":"region","operator":"eq","value":"FR"}]&limit=10'
+curl -X 'POST' 'http://localhost:8890/predict/national' -H 'accept: application/json' -d ''
+curl -X 'POST' 'http://localhost:8890/predict/region?code_insee_region=11' -H 'accept: application/json' -d ''
 ```
 
 The `filters` parameter must be JSON, for example:
@@ -61,7 +61,7 @@ docker build -t mix-energy-fastapi -f fastapi/Dockerfile fastapi
 Run:
 
 ```bash
-docker run --rm -p 8888:8888 \
+docker run --rm -p 8890:8890 \
   -e PROJECT_ID=... \
   -e DATASET_ID_PROD=... \
   -e GOOGLE_APPLICATION_CREDENTIALS=/path/in/container/key.json \
