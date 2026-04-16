@@ -1,6 +1,7 @@
 import argparse
 import os
 from typing import Any
+
 from google.cloud import bigquery, storage
 from google.oauth2 import service_account
 
@@ -47,6 +48,58 @@ def _filter_csv_blobs_by_filename_prefix(
     return filtered_blobs
 
 
+def _blob_contains_data_rows(blob: Any) -> bool:
+    """
+    Retourne True si le CSV contient au moins une ligne de donnees apres l'en-tete.
+    En cas d'impossibilite d'inspection, le chargement continue par precaution.
+    """
+    try:
+        with blob.open("rt", encoding="utf-8") as csv_stream:
+            header_seen = False
+
+            for line in csv_stream:
+                if not line.strip():
+                    continue
+
+                if not header_seen:
+                    header_seen = True
+                    continue
+
+                return True
+    except Exception as exc:
+        log.warning(
+            "Impossible d'inspecter '{}' avant chargement: {}. Le chargement continue par precaution.",
+            blob.name,
+            exc,
+        )
+        return True
+
+    return False
+
+
+def _filter_header_only_csv_blobs(csv_blobs: list[Any]) -> list[Any]:
+    """
+    Ignore les CSV qui ne contiennent qu'un en-tete pour eviter un WRITE_TRUNCATE.
+    """
+    loadable_blobs = []
+    skipped_files = []
+
+    for blob in csv_blobs:
+        if _blob_contains_data_rows(blob):
+            loadable_blobs.append(blob)
+        else:
+            skipped_files.append(blob.name.split("/")[-1])
+
+    if skipped_files:
+        log.warning(
+            "Chargement ignore pour {} fichier(s) CSV sans ligne de donnees: {}.",
+            len(skipped_files),
+            ", ".join(skipped_files),
+        )
+
+    return loadable_blobs
+
+
 def _build_clients_from_local_credentials():
     json_credentials_file = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
     if not json_credentials_file:
@@ -80,6 +133,7 @@ def run_transfer(
     blobs = list(bucket.list_blobs(prefix=PREFIX))
     csv_blobs = [b for b in blobs if b.name.endswith(".csv")]
     csv_blobs = _filter_csv_blobs_by_filename_prefix(csv_blobs, file_prefix)
+    csv_blobs = _filter_header_only_csv_blobs(csv_blobs)
     log.info(
         f"{len(csv_blobs)} fichier(s) CSV trouvé(s) dans gs://{BUCKET_NAME}/{PREFIX}"
     )

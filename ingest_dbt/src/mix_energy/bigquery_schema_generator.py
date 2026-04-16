@@ -9,6 +9,12 @@ from mix_energy import get_logger
 CSV_DELIMITER_SEMICOLON = ";"
 CSV_DELIMITER_COMMA = ","
 NULL_MARKERS = ["", "NA", "N/A", "null", "NULL", "-", "ND"]
+ECO2MIX_STRING_COLUMNS = {
+    "perimetre",
+    "nature",
+    "libelle_region",
+    "code_insee_region",
+}
 
 log = get_logger()
 
@@ -96,6 +102,22 @@ def _resolve_eco2mix_type(column_name: Any, dtype: Any) -> str:
     return "STRING"
 
 
+def _resolve_eco2mix_empty_sample_type(column_name: Any) -> str:
+    col_str = str(column_name).lower()
+
+    if "time" in col_str or "timestamp" in col_str or "date_heure" in col_str:
+        return "TIMESTAMP"
+    if "date" in col_str and "heure" not in col_str:
+        return "DATE"
+    if "heure" in col_str:
+        return "STRING"
+    if col_str in ECO2MIX_STRING_COLUMNS:
+        return "STRING"
+
+    # Eco2mix expose essentiellement des mesures numeriques hors colonnes d'identite.
+    return "FLOAT"
+
+
 def _resolve_meteo_type(column_name: Any, dtype: Any) -> str:
     if pd.api.types.is_bool_dtype(dtype):
         return "BOOLEAN"
@@ -168,10 +190,14 @@ def create_eco2mix_schema(df: pd.DataFrame) -> list[bigquery.SchemaField]:
     """Boucle de schema dediee aux fichiers commençant par eco2mix."""
     schema: list[bigquery.SchemaField] = []
     for column_name, dtype in df.dtypes.items():
-        bigquery_type = _resolve_eco2mix_type(column_name, dtype)
-
         non_null_count = df[column_name].notna().sum()
         total_count = len(df)
+
+        if non_null_count == 0:
+            bigquery_type = _resolve_eco2mix_empty_sample_type(column_name)
+        else:
+            bigquery_type = _resolve_eco2mix_type(column_name, dtype)
+
         log.debug(
             "    [eco2mix] {}: {} ({}/{} non-vides)",
             column_name,
