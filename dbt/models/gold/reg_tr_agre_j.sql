@@ -4,6 +4,45 @@
     unique_key=['date', 'code_insee_region']
 ) }}
 
+WITH source_rows AS (
+    SELECT
+        code_insee_region,
+        libelle_region,
+        nature,
+        SAFE_CAST(date AS DATE) AS date,
+        {{ safe_float64_from_raw('consommation') }} AS consommation,
+        {{ safe_float64_from_raw('thermique') }} AS thermique,
+        {{ safe_float64_from_raw('nucleaire') }} AS nucleaire,
+        {{ safe_float64_from_raw('eolien') }} AS eolien,
+        {{ safe_float64_from_raw('solaire') }} AS solaire,
+        {{ safe_float64_from_raw('hydraulique') }} AS hydraulique,
+        {{ safe_float64_from_raw('pompage') }} AS pompage,
+        {{ safe_float64_from_raw('bioenergies') }} AS bioenergies,
+        {{ safe_float64_from_raw('ech_physiques') }} AS ech_physiques,
+        {{ safe_float64_from_raw('tco_thermique') }} AS tco_thermique,
+        {{ safe_float64_from_raw('tch_thermique') }} AS tch_thermique,
+        {{ safe_float64_from_raw('tco_nucleaire') }} AS tco_nucleaire,
+        {{ safe_float64_from_raw('tch_nucleaire') }} AS tch_nucleaire,
+        {{ safe_float64_from_raw('tco_eolien') }} AS tco_eolien,
+        {{ safe_float64_from_raw('tch_eolien') }} AS tch_eolien,
+        {{ safe_float64_from_raw('tco_solaire') }} AS tco_solaire,
+        {{ safe_float64_from_raw('tch_solaire') }} AS tch_solaire,
+        {{ safe_float64_from_raw('tco_hydraulique') }} AS tco_hydraulique,
+        {{ safe_float64_from_raw('tch_hydraulique') }} AS tch_hydraulique,
+        {{ safe_float64_from_raw('tco_bioenergies') }} AS tco_bioenergies,
+        {{ safe_float64_from_raw('tch_bioenergies') }} AS tch_bioenergies
+    FROM {{ source('reg_source', 'eco2mix_regional_tr') }}
+    {% if is_incremental() %}
+        WHERE SAFE_CAST(date AS DATE) >= (SELECT DATE_SUB(MAX(date), INTERVAL 2 DAY) FROM {{ this }})
+    {% endif %}
+),
+
+valid_rows AS (
+    SELECT *
+    FROM source_rows
+    WHERE date IS NOT NULL
+)
+
 SELECT
     code_insee_region,
     libelle_region,
@@ -34,9 +73,6 @@ SELECT
     SUM(tch_hydraulique * consommation) / NULLIF(SUM(consommation), 0) AS tch_hydraulique,
     SUM(tco_bioenergies * bioenergies) / NULLIF(SUM(bioenergies), 0) AS tco_bioenergies,
     SUM(tch_bioenergies * consommation) / NULLIF(SUM(consommation), 0) AS tch_bioenergies
-FROM {{ source('reg_source', 'eco2mix_regional_tr') }}
-    {% if is_incremental() %}
-        WHERE date >= (SELECT DATE_SUB(MAX(date), INTERVAL 2 DAY) FROM {{ this }})
-    {% endif %}
+FROM valid_rows
 GROUP BY code_insee_region, libelle_region, nature, date, annee, mois, jour
 ORDER BY date, libelle_region ASC

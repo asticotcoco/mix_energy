@@ -3,6 +3,20 @@
     materialized='table'
 ) }}
 
+WITH source_rows AS (
+  SELECT
+    code_insee_region,
+    SAFE_CAST(date_heure AS TIMESTAMP) AS date_heure,
+    {{ safe_float64_from_raw('consommation') }} AS consommation
+  FROM {{ source('reg_source', 'eco2mix_regional_tr') }}
+),
+
+window_bounds AS (
+  SELECT MIN(date_heure) AS first_missing_date
+  FROM source_rows
+  WHERE consommation IS NULL
+)
+
 SELECT
 code_insee_region,
 date_heure,
@@ -30,6 +44,9 @@ EXTRACT(MONTH FROM date_heure) AS month,
 EXTRACT(DAY FROM date_heure) AS day,
 EXTRACT(HOUR FROM date_heure) AS hour,
 EXTRACT(MINUTE FROM date_heure) AS minute
-FROM {{ source('reg_source', 'eco2mix_regional_tr') }}
-WHERE EXTRACT(YEAR FROM date_heure) = EXTRACT(YEAR FROM CURRENT_DATE()) and date_heure < (select min(date_heure) from {{ source('reg_source', 'eco2mix_regional_tr') }} where consommation is null)
+FROM source_rows
+CROSS JOIN window_bounds
+WHERE date_heure IS NOT NULL
+  AND EXTRACT(YEAR FROM date_heure) = EXTRACT(YEAR FROM CURRENT_DATE())
+  AND (first_missing_date IS NULL OR date_heure < first_missing_date)
 order by code_insee_region, date_heure asc
