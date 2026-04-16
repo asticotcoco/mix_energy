@@ -30,7 +30,8 @@ dist/
 local/
 
 # vscode
-.vscode/
+.vscode/*
+!.vscode/settings.json
 
 # Mlflow
 mlruns/

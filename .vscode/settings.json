@@ -1,0 +1,22 @@
+{
+  "remote.autoForwardPorts": true,
+  "remote.restoreForwardedPorts": true,
+  "remote.portsAttributes": {
+    "8502": {
+      "label": "Airflow UI",
+      "onAutoForward": "openBrowserOnce"
+    },
+    "8501": {
+      "label": "Streamlit Dashboard",
+      "onAutoForward": "openBrowserOnce"
+    },
+    "5000": {
+      "label": "MLflow UI",
+      "onAutoForward": "notify"
+    },
+    "8888": {
+      "label": "FastAPI",
+      "onAutoForward": "notify"
+    }
+  }
+}

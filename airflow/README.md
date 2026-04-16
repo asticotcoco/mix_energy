@@ -18,4 +18,4 @@ Start Airflow
 
 Notes
 - This UID setup prevents permission issues on mounted folders (airflow/dags, airflow/logs, airflow/config, airflow/plugins).
-- Airflow API/UI is exposed on localhost:8081.
+- Airflow API/UI is exposed on localhost:8502.
