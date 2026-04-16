@@ -169,6 +169,22 @@ front-streamlit
 
 ### Structure des scripts Terraform
 
+README [>>](./iac/README.md)
+
+```
+iac
+├── README.md
+├── auto.tfvars
+├── deploy_full.sh
+├── deploy_gcp_project.sh
+├── main.tf
+├── provider.tf
+├── reset_and_import_bucket.sh
+└── variables.tf
+```
+
+Le dossier iac contient le provisioning Terraform du projet sur GCP : projet, APIs, comptes de service, bucket, datasets BigQuery, Artifact Registry, reseau et VM.
+
 ## Configuration environnement de développment
 
 Créer un environnement virtuel
