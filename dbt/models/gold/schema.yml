@@ -1,0 +1,28 @@
+version: 1
+
+models:
+  - name: gold_meteo_by_city
+    description: Synthese quotidienne par ville des observations horaires meteorologiques.
+    columns:
+      - name: city_name
+        tests:
+          - not_null
+      - name: date
+        tests:
+          - not_null
+      - name: hourly_observation_count
+        tests:
+          - not_null
+
+  - name: gold_air_quality_by_city
+    description: Synthese quotidienne par ville des indices de qualite de l'air calcules sur le dernier snapshot disponible par zone.
+    columns:
+      - name: city_name
+        tests:
+          - not_null
+      - name: date
+        tests:
+          - not_null
+      - name: zone_count
+        tests:
+          - not_null

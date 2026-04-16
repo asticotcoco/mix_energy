@@ -14,3 +14,56 @@ sources:
     tables:
       - name: eco2mix_regional_cons_def
       - name: eco2mix_regional_tr
+
+  - name: meteo_source
+    database: "{{ env_var('PROJECT_ID') }}"
+    schema: "{{ target.schema }}"
+    tables:
+    - name: meteo_paris
+    - name: meteo_lyon
+    - name: meteo_lille
+    - name: meteo_dijon
+    - name: meteo_rennes
+    - name: meteo_orleans
+    - name: meteo_strasbourg
+    - name: meteo_caen
+    - name: meteo_bordeaux
+    - name: meteo_toulouse
+    - name: meteo_marseille
+    - name: meteo_nantes
+
+  - name: air_quality_source
+    database: "{{ env_var('PROJECT_ID') }}"
+    schema: "{{ target.schema }}"
+    tables:
+    - name: air_quality_paris
+    - name: air_quality_lyon
+    - name: air_quality_lille
+    - name: air_quality_dijon
+    - name: air_quality_rennes
+    - name: air_quality_orleans
+    - name: air_quality_strasbourg
+    - name: air_quality_caen
+    - name: air_quality_bordeaux
+    - name: air_quality_toulouse
+    - name: air_quality_marseille
+    - name: air_quality_nantes
+
+models:
+  - name: meteo_by_city
+    columns:
+      - name: city_name
+        tests:
+          - not_null
+      - name: time
+        tests:
+          - not_null
+
+  - name: air_quality_by_city
+    columns:
+      - name: city_name
+        tests:
+          - not_null
+      - name: date_maj
+        tests:
+          - not_null

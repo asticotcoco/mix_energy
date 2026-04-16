@@ -1,4 +1,5 @@
 from datetime import date
+import json
 
 from mix_energy import air_quality_ingest as ingest
 
@@ -176,3 +177,51 @@ def test_init_ingestion_uploads_one_csv_per_city(monkeypatch):
         (b"\xef\xbb\xbfvalue\r\n1\r\n", "air_quality_paris"),
         (b"\xef\xbb\xbfvalue\r\n1\r\n", "air_quality_lyon"),
     ]
+
+
+def test_collect_city_csv_contents_returns_one_csv_per_city(monkeypatch):
+    called = {"api": []}
+    cities = {
+        "paris": {"insee_commune": "75056", "code_aasqa": 11},
+        "lyon": {"insee_commune": "69123", "code_aasqa": 84},
+    }
+
+    monkeypatch.setattr(ingest, "CITIES", cities)
+    monkeypatch.setattr(ingest, "date", FixedDate)
+    monkeypatch.setattr(ingest, "get_jwt_token", lambda: "token-123")
+
+    def fake_get_atmo_index(
+        code_insee, date_histo, aasqa, date_jour=None, jwt_token=None
+    ):
+        called["api"].append((code_insee, date_histo, aasqa, date_jour, jwt_token))
+        return {"features": [{"properties": {"value": 1}}]}
+
+    monkeypatch.setattr(ingest, "get_atmo_index", fake_get_atmo_index)
+
+    csv_contents = ingest.collect_city_csv_contents()
+
+    assert called["api"] == [
+        ("75056", "2026-03-03", "11", "2026-04-03", "token-123"),
+        ("69123", "2026-03-03", "84", "2026-04-03", "token-123"),
+    ]
+    assert sorted(csv_contents.keys()) == [
+        "air_quality_lyon.csv",
+        "air_quality_paris.csv",
+    ]
+    assert csv_contents["air_quality_paris.csv"].startswith(b"\xef\xbb\xbfvalue")
+
+
+def test_get_atmo_index_returns_none_when_json_is_invalid(monkeypatch):
+    class DummyResponse:
+        status_code = 200
+        text = "<html>temporary upstream issue</html>"
+
+        def json(self):
+            raise json.JSONDecodeError("Expecting value", self.text, 0)
+
+    monkeypatch.setattr(ingest, "get_jwt_token", lambda: "token-123")
+    monkeypatch.setattr(ingest.requests, "get", lambda *args, **kwargs: DummyResponse())
+
+    result = ingest.get_atmo_index(code_insee="75056", aasqa="11")
+
+    assert result is None

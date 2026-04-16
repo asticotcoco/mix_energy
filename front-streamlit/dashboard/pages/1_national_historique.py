@@ -7,7 +7,7 @@ Page 1: Vision national historique et consolidée des données de production d'�
 import pandas as pd
 import streamlit as st
 import plotly.graph_objects as go
-from dashboard_share import (
+from dashboard.dashboard_share import (
     BASE_LAYOUT,
     COLORS,
     SOURCE_COLUMNS,

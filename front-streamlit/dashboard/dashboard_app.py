@@ -5,7 +5,7 @@ Homepage for the multipage Streamlit dashboard.
 
 import streamlit as st
 
-from dashboard_share import (
+from dashboard.dashboard_share import (
     apply_global_style,
     configure_page,
 )
@@ -18,7 +18,7 @@ st.markdown(
 <div class="hero-header">
     <span class="hero-icon">⚡</span>
     <p class="hero-title">PRODUCTION ELECTRIQUE FRANCAISE</p>
-    <p class="hero-subtitle">Réseau national · Réseaux régionaux · Émissions de CO2 · Données consolidées</p>
+    <p class="hero-subtitle">Réseau national · Réseaux régionaux · CO2 · Meteo · Qualite de l'air</p>
 </div>
 """,
     unsafe_allow_html=True,
@@ -89,7 +89,7 @@ div[data-testid="stPageLink"] a[aria-current="page"] {
     unsafe_allow_html=True,
 )
 
-col1, col2, col3, col4 = st.columns(4)
+col1, col2, col3, col4, col5 = st.columns(5)
 with col1:
     st.page_link(
         "pages/1_national_historique.py",
@@ -112,6 +112,12 @@ with col4:
     st.page_link(
         "pages/4_regional_temps_reel.py",
         label="Regional Temps Reel",
+        use_container_width=True,
+    )
+with col5:
+    st.page_link(
+        "pages/5_environnement.py",
+        label="Meteo & Air",
         use_container_width=True,
     )
 
@@ -137,7 +143,8 @@ st.markdown(
     1. National Historique: donnees annee en cours + annee precedente.<br>
     2. National Temps Reel: donnees du mois en cours avec refresh.<br>
     3. Regional Historique: region choisie, annee en cours + annee precedente.<br>
-    4. Regional Temps Reel: region choisie, mois en cours avec refresh.
+        4. Regional Temps Reel: region choisie, mois en cours avec refresh.<br>
+                5. Meteo & Air: meteo detaillee en silver, synthese air quotidienne en gold, carte ATMO detaillee en silver.
   </div>
 </div>
 """,

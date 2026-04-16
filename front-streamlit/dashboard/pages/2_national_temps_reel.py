@@ -8,7 +8,7 @@ import plotly.graph_objects as go
 import streamlit as st
 from plotly.subplots import make_subplots
 
-from dashboard_share import (
+from dashboard.dashboard_share import (
     BASE_LAYOUT,
     COLORS,
     SOURCE_COLUMNS,

@@ -61,6 +61,7 @@ class FakeClient:
 def _build_service(include_hidden_tables: bool = False) -> BigQueryDatasetService:
     settings = Settings(
         project_id="mix-energie-gcp",
+        dataset_base="prod_mix_energie",
         dataset_id="prod_mix_energie",
         credentials_path=Path("/tmp/fake.json"),
         include_hidden_tables=include_hidden_tables,
@@ -123,3 +124,16 @@ def test_query_table_rejects_unknown_columns():
         assert "Unknown columns" in str(exc)
     else:
         raise AssertionError("Unknown columns should fail")
+
+
+def test_settings_compute_dataset_ids_for_layers():
+    settings = Settings(
+        project_id="mix-energie-gcp",
+        dataset_base="prod_mix_energie",
+        dataset_id="prod_mix_energie_gold",
+        credentials_path=Path("/tmp/fake.json"),
+    )
+
+    assert settings.dataset_id_for_layer("raw") == "prod_mix_energie"
+    assert settings.dataset_id_for_layer("silver") == "prod_mix_energie_silver"
+    assert settings.dataset_id_for_layer("gold") == "prod_mix_energie_gold"

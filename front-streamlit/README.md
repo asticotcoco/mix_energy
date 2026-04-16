@@ -17,6 +17,8 @@
 
    poetry run streamlit run dashboard/dashboard_app.py
 
+The dashboard includes an environment page with a hybrid data strategy: hourly meteo_by_city remains on silver, the daily air_quality_by_city summary uses gold, and the ATMO map keeps the detailed silver layer.
+
 No FASTAPI_BASE_URL is required on the command line when FastAPI runs on http://localhost:8888.
 
 ## Optional custom API URL

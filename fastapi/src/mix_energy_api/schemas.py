@@ -18,6 +18,8 @@ FilterOperator = Literal[
     "not_null",
 ]
 
+DatasetLayer = Literal["raw", "silver", "gold"]
+
 
 class FilterClause(BaseModel):
     model_config = ConfigDict(extra="forbid")

@@ -16,7 +16,7 @@ try:
 except ImportError:  # pragma: no cover - optional dependency
     st_autorefresh = None
 
-from dashboard_share import (
+from dashboard.dashboard_share import (
     BASE_LAYOUT,
     COLORS,
     SOURCE_COLUMNS,

@@ -19,7 +19,7 @@ import json
 
 import plotly.express as px
 
-from data_api_client import FastAPIClient
+from dashboard.data_api_client import FastAPIClient
 
 APP_PAGE_TITLE = "PROJET MiX-ENERGIE"
 APP_PAGE_ICON = "⚡"
@@ -65,6 +65,21 @@ REGIONS_DICT = {
     "52": "Pays de la Loire",
     "93": "Provence-Alpes-Côte d'Azur",
 }
+
+SUPPORTED_CITIES = (
+    "paris",
+    "lyon",
+    "lille",
+    "dijon",
+    "rennes",
+    "orleans",
+    "strasbourg",
+    "caen",
+    "bordeaux",
+    "toulouse",
+    "marseille",
+    "nantes",
+)
 
 
 def configure_page() -> None:
@@ -432,6 +447,8 @@ TABLES = {
     "table3": "reg_cons_agre_j",
     "table4": "reg_tr_agre_j",
     "table5": "kpi",
+    "table6": "meteo_by_city",
+    "table7": "air_quality_by_city",
 }
 
 
@@ -534,6 +551,54 @@ def load_kpi_data() -> pd.DataFrame:
     return _normalize_dataframe(pd.DataFrame(rows), table_name=TABLES["table5"])
 
 
+@st.cache_data(ttl=300, show_spinner="Chargement des donnees meteo par ville...")
+def load_meteo_by_city_data(city: str) -> pd.DataFrame:
+    client = FastAPIClient.from_environment()
+    start_date, end_date = _rolling_last_30_days_window()
+    rows = client.load_rows_for_date_range(
+        TABLES["table6"],
+        start_date=start_date,
+        end_date=end_date,
+        extra_filters=[{"field": "city_name", "operator": "eq", "value": city}],
+        layer="silver",
+    )
+    return _normalize_dataframe(pd.DataFrame(rows), table_name=TABLES["table6"])
+
+
+@st.cache_data(
+    ttl=300,
+    show_spinner="Chargement des donnees qualite de l'air par ville...",
+)
+def load_air_quality_by_city_detail_data(city: str) -> pd.DataFrame:
+    client = FastAPIClient.from_environment()
+    start_date, end_date = _rolling_last_30_days_window()
+    rows = client.load_rows_for_date_range(
+        TABLES["table7"],
+        start_date=start_date,
+        end_date=end_date,
+        extra_filters=[{"field": "city_name", "operator": "eq", "value": city}],
+        layer="silver",
+    )
+    return _normalize_dataframe(pd.DataFrame(rows), table_name=TABLES["table7"])
+
+
+@st.cache_data(
+    ttl=300,
+    show_spinner="Chargement de la synthese quotidienne qualite de l'air...",
+)
+def load_air_quality_by_city_daily_data(city: str) -> pd.DataFrame:
+    client = FastAPIClient.from_environment()
+    start_date, end_date = _rolling_last_30_days_window()
+    rows = client.load_rows_for_date_range(
+        TABLES["table7"],
+        start_date=start_date,
+        end_date=end_date,
+        extra_filters=[{"field": "city_name", "operator": "eq", "value": city}],
+        layer="gold",
+    )
+    return _normalize_dataframe(pd.DataFrame(rows), table_name=TABLES["table7"])
+
+
 @st.cache_data(ttl=300, show_spinner="Chargement des données position...")
 def read_geojson():
     current_path = os.path.dirname(os.path.abspath(__file__))
@@ -559,6 +624,9 @@ def get_next_conso_reg(insee_code: int):
 def clear_realtime_cache() -> None:
     load_national_realtime_data.clear()
     load_regional_realtime_data.clear()
+    load_meteo_by_city_data.clear()
+    load_air_quality_by_city_detail_data.clear()
+    load_air_quality_by_city_daily_data.clear()
 
 
 def _normalize_dataframe(frame: pd.DataFrame, *, table_name: str) -> pd.DataFrame:
@@ -572,6 +640,20 @@ def _normalize_dataframe(frame: pd.DataFrame, *, table_name: str) -> pd.DataFram
         frame["mois"] = pd.to_datetime(
             frame["mois"], utc=True, errors="coerce"
         ).dt.tz_convert(None)
+
+    for column in (
+        "time",
+        "date",
+        "date_maj",
+        "date_dif",
+        "date_ech",
+        "last_update_at",
+        "last_observation_at",
+    ):
+        if column in frame.columns:
+            frame[column] = pd.to_datetime(
+                frame[column], utc=True, errors="coerce"
+            ).dt.tz_convert(None)
 
     if (
         table_name.startswith("reg_")
@@ -592,6 +674,10 @@ def _detect_region_field(table_name: str) -> str:
 
 def get_region_options() -> list[str]:
     return sorted(REGIONS_DICT.values())
+
+
+def get_city_options() -> list[str]:
+    return list(SUPPORTED_CITIES)
 
 
 def get_energy_types() -> list[str]:
@@ -783,6 +869,26 @@ def get_regional_realtime_context(region: str | None = None) -> dict:
     if "geopos" not in context.keys():
         context["geopos"] = read_geojson()
 
+    return context
+
+
+def get_environment_context(city: str | None = None) -> dict:
+    selected_city = city or SUPPORTED_CITIES[0]
+    try:
+        _get_api_health()
+        df_meteo_by_city = load_meteo_by_city_data(selected_city)
+        df_air_quality_by_city_detail = load_air_quality_by_city_detail_data(selected_city)
+        df_air_quality_by_city_daily = load_air_quality_by_city_daily_data(selected_city)
+    except Exception as exc:
+        st.error(f"Erreur de chargement FastAPI (environnement): {exc}")
+        st.stop()
+
+    context = _build_context(df_meteo_by_city, table_key="table6")
+    context["df_meteo_by_city"] = df_meteo_by_city
+    context["df_air_quality_by_city"] = df_air_quality_by_city_detail
+    context["df_air_quality_by_city_detail"] = df_air_quality_by_city_detail
+    context["df_air_quality_by_city_daily"] = df_air_quality_by_city_daily
+    context["selected_city"] = selected_city
     return context
 
 

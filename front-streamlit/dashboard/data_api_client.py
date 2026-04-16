@@ -12,6 +12,7 @@ from dotenv import load_dotenv
 
 
 DEFAULT_BASE_URL = "http://localhost:8888"
+DEFAULT_LAYER = "gold"
 
 
 def _load_env_files() -> None:
@@ -47,8 +48,16 @@ class FastAPIClient:
     def health(self) -> dict[str, Any]:
         return self._safe_get_json("/health")
 
-    def get_table_columns(self, table_name: str) -> list[dict[str, Any]]:
-        payload = self._safe_get_json(f"/tables/{table_name}/columns")
+    def get_table_columns(
+        self,
+        table_name: str,
+        *,
+        layer: str = DEFAULT_LAYER,
+    ) -> list[dict[str, Any]]:
+        payload = self._safe_get_json(
+            f"/tables/{table_name}/columns",
+            params={"layer": layer},
+        )
         return payload.get("columns", [])
 
     def query_table(
@@ -57,8 +66,12 @@ class FastAPIClient:
         *,
         filters: list[dict[str, Any]] | None = None,
         limit: int | None = None,
+        layer: str = DEFAULT_LAYER,
     ) -> dict[str, Any]:
-        params: dict[str, Any] = {"limit": limit or self.per_call_limit}
+        params: dict[str, Any] = {
+            "limit": limit or self.per_call_limit,
+            "layer": layer,
+        }
         if filters:
             params["filters"] = json.dumps(filters, ensure_ascii=False)
 
@@ -138,15 +151,25 @@ class FastAPIClient:
         next_conso = self._safe_post_json(path="/predict/region", params=params)
         return next_conso
 
-    def _get_column_map(self, table_name: str) -> dict[str, dict[str, Any]]:
+    def _get_column_map(
+        self,
+        table_name: str,
+        *,
+        layer: str = DEFAULT_LAYER,
+    ) -> dict[str, dict[str, Any]]:
         return {
             str(col.get("name")): col
-            for col in self.get_table_columns(table_name)
+            for col in self.get_table_columns(table_name, layer=layer)
             if col.get("name")
         }
 
-    def detect_date_field(self, table_name: str) -> tuple[str, str]:
-        column_map = self._get_column_map(table_name)
+    def detect_date_field(
+        self,
+        table_name: str,
+        *,
+        layer: str = DEFAULT_LAYER,
+    ) -> tuple[str, str]:
+        column_map = self._get_column_map(table_name, layer=layer)
 
         # Priority 1: canonical names that are truly date/time typed.
         for candidate in ("date", "datetime", "timestamp", "mois", "jour"):
@@ -170,8 +193,15 @@ class FastAPIClient:
 
         raise ValueError(f"No date column found for table '{table_name}'")
 
-    def detect_region_field(self, table_name: str) -> str:
-        columns = {col.get("name") for col in self.get_table_columns(table_name)}
+    def detect_region_field(
+        self,
+        table_name: str,
+        *,
+        layer: str = DEFAULT_LAYER,
+    ) -> str:
+        columns = {
+            col.get("name") for col in self.get_table_columns(table_name, layer=layer)
+        }
         if "libelle_region" in columns:
             return "libelle_region"
         if "region" in columns:
@@ -185,8 +215,9 @@ class FastAPIClient:
         start_date: date,
         end_date: date,
         extra_filters: list[dict[str, Any]] | None = None,
+        layer: str = DEFAULT_LAYER,
     ) -> list[dict[str, Any]]:
-        date_field, date_field_type = self.detect_date_field(table_name)
+        date_field, date_field_type = self.detect_date_field(table_name, layer=layer)
         rows: list[dict[str, Any]] = []
 
         for chunk_start, chunk_end in _monthly_chunks(start_date, end_date):
@@ -213,7 +244,7 @@ class FastAPIClient:
             if extra_filters:
                 filters.extend(extra_filters)
 
-            payload = self.query_table(table_name, filters=filters)
+            payload = self.query_table(table_name, filters=filters, layer=layer)
             chunk_rows = payload.get("rows", [])
             rows.extend(chunk_rows)
 

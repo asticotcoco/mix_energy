@@ -8,7 +8,7 @@ import streamlit as st
 import numpy as np
 import plotly.graph_objects as go
 
-from dashboard_share import (
+from dashboard.dashboard_share import (
     BASE_LAYOUT,
     SOURCE_COLUMNS,
     apply_global_style,

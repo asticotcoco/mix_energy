@@ -2,6 +2,7 @@ import calendar
 import csv
 import io
 import os
+import json
 import requests
 
 from datetime import date
@@ -32,11 +33,9 @@ CITIES = {
 log = get_logger()
 
 
-def save_air_quality_to_bucket(features: list[dict], bucket) -> bool:
-    """Convertit les features ATMO en CSV et les envoie dans le bucket GCP."""
+def features_to_csv_bytes(features: list[dict]) -> bytes | None:
     if not features:
-        log.info("Aucune donnée à sauvegarder.")
-        return False
+        return None
 
     csv_buffer = io.StringIO()
     headers = list(features[0]["properties"].keys())
@@ -46,8 +45,18 @@ def save_air_quality_to_bucket(features: list[dict], bucket) -> bool:
     for feat in features:
         writer.writerow(feat["properties"])
 
+    return csv_buffer.getvalue().encode("utf-8-sig")
+
+
+def save_air_quality_to_bucket(features: list[dict], bucket) -> bool:
+    """Convertit les features ATMO en CSV et les envoie dans le bucket GCP."""
+    csv_content = features_to_csv_bytes(features)
+    if csv_content is None:
+        log.info("Aucune donnée à sauvegarder.")
+        return False
+
     upload_data_in_bucket(
-        bucket, csv_buffer.getvalue().encode("utf-8-sig"), "air_quality_daily"
+        bucket, csv_content, "air_quality_daily"
     )
     log.info("Données déposées dans le bucket GCP.")
     return True
@@ -69,21 +78,14 @@ def _same_day_previous_month(current_day: date) -> date:
 
 def _upload_city_features(city_name: str, features: list[dict], bucket) -> bool:
     """Upload un CSV par ville en utilisant un nom d'objet dédié."""
-    if not features:
+    csv_content = features_to_csv_bytes(features)
+    if csv_content is None:
         log.info(f"Aucune donnée à sauvegarder pour {city_name}.")
         return False
 
-    csv_buffer = io.StringIO()
-    headers = list(features[0]["properties"].keys())
-
-    writer = csv.DictWriter(csv_buffer, fieldnames=headers)
-    writer.writeheader()
-    for feat in features:
-        writer.writerow(feat["properties"])
-
     upload_data_in_bucket(
         bucket,
-        csv_buffer.getvalue().encode("utf-8-sig"),
+        csv_content,
         f"air_quality_{city_name}",
     )
     log.info(f"Données déposées dans le bucket GCP pour {city_name}.")
@@ -156,28 +158,56 @@ def get_atmo_index(
     if response.status_code != 200:
         log.error(f"Erreur API : {response.status_code} {response.text}")
         return None
-    return response.json()
+    try:
+        return response.json()
+    except json.JSONDecodeError:
+        body_preview = response.text[:300].replace("\n", " ")
+        log.error(
+            "Reponse ATMO invalide (JSON illisible) pour code_insee=%s aasqa=%s date=%s. Apercu: %s",
+            code_insee,
+            aasqa,
+            date_str,
+            body_preview,
+        )
+        return None
 
 
 def init_ingestion() -> None:
     """Récupère les données ATMO sur le mois précédent et dépose un CSV par ville."""
+    csv_contents = collect_city_csv_contents()
+    if not csv_contents:
+        return
+
+    bucket = _get_bucket_or_log_error()
+    if bucket is None:
+        return
+
+    for object_name, csv_content in csv_contents.items():
+        upload_data_in_bucket(bucket, csv_content, object_name.removesuffix(".csv"))
+
+
+def collect_city_csv_contents(
+    current_day: str | None = None,
+    historical_day: str | None = None,
+) -> dict[str, bytes]:
+    """Récupère les données ATMO du mois glissant et retourne un CSV par ville."""
     jwt_token = get_jwt_token()
     if not jwt_token:
         log.error("Impossible d'initialiser l'ingestion sans token JWT.")
-        return
+        return {}
 
     today = date.today()
-    current_day = today.isoformat()
-    historical_day = _same_day_previous_month(today).isoformat()
-    # historical_day = "2026-04-01"  # Date fixe pour les tests
-    bucket = None
+    effective_current_day = current_day or today.isoformat()
+    effective_historical_day = historical_day or _same_day_previous_month(today).isoformat()
+
+    csv_contents: dict[str, bytes] = {}
 
     for city_name, city_config in CITIES.items():
         data = get_atmo_index(
             code_insee=city_config["insee_commune"],
-            date_histo=historical_day,
+            date_histo=effective_historical_day,
             aasqa=str(city_config["code_aasqa"]),
-            date_jour=current_day,
+            date_jour=effective_current_day,
             jwt_token=jwt_token,
         )
 
@@ -185,12 +215,13 @@ def init_ingestion() -> None:
             log.info(f"Aucune donnée reçue de l'API pour {city_name}.")
             continue
 
-        if bucket is None:
-            bucket = _get_bucket_or_log_error()
-            if bucket is None:
-                return
+        csv_content = features_to_csv_bytes(data["features"])
+        if csv_content is None:
+            continue
 
-        _upload_city_features(city_name, data["features"], bucket)
+        csv_contents[f"air_quality_{city_name}.csv"] = csv_content
+
+    return csv_contents
 
 
 def run_ingestion(date_jour: str | None = None) -> None:

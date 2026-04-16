@@ -4,6 +4,7 @@ import pandas as pd
 import requests
 
 from mix_energy.meteo_ingest import (
+    collect_meteo_csv_contents,
     get_meteo_forecast,
     json_to_dataframe,
     save_meteo_to_csv,
@@ -92,3 +93,28 @@ def test_save_meteo_to_csv_writes_expected_file(tmp_path, monkeypatch):
 
     output_file.unlink()
     assert not output_file.exists()
+
+
+def test_collect_meteo_csv_contents_returns_one_csv_per_city(monkeypatch):
+    payload = {
+        "hourly": {
+            "time": ["2026-03-31T00:00", "2026-03-31T01:00"],
+            "temperature_2m": [13.4, 12.8],
+        }
+    }
+    monkeypatch.setattr(
+        "mix_energy.meteo_ingest.CITIES",
+        {
+            "paris": (48.8534, 2.3488),
+            "lyon": (45.7640, 4.8357),
+        },
+    )
+    monkeypatch.setattr(
+        "mix_energy.meteo_ingest.get_meteo_forecast",
+        lambda latitude, longitude, past_days, forecast_days: payload,
+    )
+
+    csv_contents = collect_meteo_csv_contents(past_days=2, forecast_days=1)
+
+    assert sorted(csv_contents.keys()) == ["meteo_lyon.csv", "meteo_paris.csv"]
+    assert csv_contents["meteo_paris.csv"].startswith(b"time,temperature_2m\n")

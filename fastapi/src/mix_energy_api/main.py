@@ -14,7 +14,7 @@ from .bigquery_service import (
     UnknownTableError,
 )
 from .config import load_settings
-from .schemas import DatasetOverview, FilterClause, QueryResponse, TableColumns
+from .schemas import DatasetLayer, DatasetOverview, FilterClause, QueryResponse, TableColumns
 
 from predict.train import predict_conso
 
@@ -67,27 +67,49 @@ def create_app() -> FastAPI:
     @app.on_event("startup")
     def _startup() -> None:
         app.state.settings = settings
-        app.state.service = BigQueryDatasetService.create(settings)
+        services: dict[str, BigQueryDatasetService] = {}
+        for layer in ("raw", "silver", "gold"):
+            layer_settings = settings.__class__(
+                project_id=settings.project_id,
+                dataset_base=settings.dataset_base,
+                dataset_id=settings.dataset_id_for_layer(layer),
+                credentials_path=settings.credentials_path,
+                default_limit=settings.default_limit,
+                max_limit=settings.max_limit,
+                default_layer=settings.default_layer,
+                allowed_origins=settings.allowed_origins,
+                include_hidden_tables=settings.include_hidden_tables,
+            )
+            services[layer] = BigQueryDatasetService.create(layer_settings)
 
-    def get_service(request: Request) -> BigQueryDatasetService:
-        service = getattr(request.app.state, "service", None)
+        app.state.services = services
+
+    def get_service(request: Request, layer: DatasetLayer = "gold") -> BigQueryDatasetService:
+        services = getattr(request.app.state, "services", None)
+        if services is None:
+            raise HTTPException(status_code=503, detail="BigQuery services are not ready")
+        service = services.get(layer)
         if service is None:
-            raise HTTPException(status_code=503, detail="BigQuery service is not ready")
+            raise HTTPException(status_code=404, detail=f"Dataset layer '{layer}' is not available")
         return service
 
     @app.get("/health")
-    def health(request: Request) -> dict[str, str]:
-        loaded_settings = getattr(request.app.state, "settings", settings)
+    def health(request: Request, layer: DatasetLayer = Query(default="gold")) -> dict[str, str]:
+        service = get_service(request, layer=layer)
         return {
             "status": "ok",
-            "project_id": loaded_settings.project_id,
-            "dataset_id": loaded_settings.dataset_id,
+            "project_id": service.settings.project_id,
+            "dataset_id": service.settings.dataset_id,
+            "layer": layer,
         }
 
     @app.get("/tables", response_model=DatasetOverview)
     def list_tables(
-        service: BigQueryDatasetService = Depends(get_service),
+        request: Request,
+        layer: DatasetLayer = Query(default="gold"),
     ) -> dict[str, Any]:
+        service = get_service(request, layer=layer)
+        service.refresh_tables()
         return {
             "project_id": service.settings.project_id,
             "dataset_id": service.settings.dataset_id,
@@ -96,9 +118,11 @@ def create_app() -> FastAPI:
 
     @app.get("/tables/{table_name}/columns", response_model=TableColumns)
     def get_table_columns(
+        request: Request,
         table_name: str,
-        service: BigQueryDatasetService = Depends(get_service),
+        layer: DatasetLayer = Query(default="gold"),
     ) -> dict[str, Any]:
+        service = get_service(request, layer=layer)
         try:
             columns = service.get_table_columns(table_name)
             return {
@@ -106,10 +130,20 @@ def create_app() -> FastAPI:
                 "columns": columns,
             }
         except UnknownTableError as exc:
+            service.refresh_tables()
+            try:
+                columns = service.get_table_columns(table_name)
+                return {
+                    "table_name": table_name,
+                    "columns": columns,
+                }
+            except UnknownTableError:
+                pass
             raise HTTPException(status_code=404, detail=str(exc)) from exc
 
     @app.get("/tables/{table_name}", response_model=QueryResponse)
     def query_table(
+        request: Request,
         table_name: str,
         columns: str | None = Query(
             default=None, description="Comma-separated list of columns"
@@ -118,9 +152,10 @@ def create_app() -> FastAPI:
             default=None,
             description="JSON array of filter clauses, e.g. [{'field':'date','operator':'gte','value':'2024-01-01'}]",
         ),
+        layer: DatasetLayer = Query(default="gold"),
         limit: int | None = Query(default=None, ge=1),
-        service: BigQueryDatasetService = Depends(get_service),
     ) -> dict[str, Any]:
+        service = get_service(request, layer=layer)
         parsed_columns = _parse_columns(columns)
         parsed_filters = _parse_filters(filters)
 
@@ -132,6 +167,16 @@ def create_app() -> FastAPI:
                 limit=limit,
             )
         except UnknownTableError as exc:
+            service.refresh_tables()
+            try:
+                return service.query_table(
+                    table_name,
+                    columns=parsed_columns,
+                    filters=parsed_filters,
+                    limit=limit,
+                )
+            except UnknownTableError:
+                pass
             raise HTTPException(status_code=404, detail=str(exc)) from exc
         except UnknownColumnError as exc:
             raise HTTPException(status_code=400, detail=str(exc)) from exc
@@ -141,7 +186,8 @@ def create_app() -> FastAPI:
             raise HTTPException(status_code=400, detail=str(exc)) from exc
 
     @app.post("/predict/national")
-    def predict_nat(service: BigQueryDatasetService = Depends(get_service)):
+    def predict_nat(request: Request):
+        service = get_service(request, layer="gold")
         predicted_val = predict_conso(service.client, True)
         if predicted_val is None:
             raise HTTPException(
@@ -152,8 +198,10 @@ def create_app() -> FastAPI:
 
     @app.post("/predict/region")
     def predict_region(
-        code_insee_region: int, service: BigQueryDatasetService = Depends(get_service)
+        request: Request,
+        code_insee_region: int,
     ):
+        service = get_service(request, layer="gold")
         predicted_val = predict_conso(service.client, False, code_insee_region)
         if predicted_val is None:
             raise HTTPException(

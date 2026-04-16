@@ -10,6 +10,8 @@ except ImportError:
     from mix_energy.gcp_utils import connect_to_bucket, upload_data_in_bucket
 
 BASE_URL = "https://api.open-meteo.com/v1/forecast"
+DEFAULT_PAST_DAYS = 30
+DEFAULT_FORECAST_DAYS = 1
 latitude_paris = 48.8534
 longitude_paris = 2.3488
 latitude_lyon = 45.7640
@@ -35,9 +37,6 @@ longitude_marseille = 5.3698
 latitude_nantes = 47.2184
 longitude_nantes = -1.5536
 
-past_days = os.getenv("PAST_DAYS")
-forecast_days = os.getenv("FORCAST_DAYS")
-
 CITIES = {
     "paris": (latitude_paris, longitude_paris),
     "lyon": (latitude_lyon, longitude_lyon),
@@ -54,6 +53,90 @@ CITIES = {
 }
 
 logger = get_logger()
+
+
+def _read_positive_int_from_env(
+    env_names: tuple[str, ...],
+    default_value: int,
+) -> int:
+    for env_name in env_names:
+        raw_value = os.getenv(env_name)
+        if raw_value is None or raw_value.strip() == "":
+            continue
+
+        try:
+            value = int(raw_value)
+        except ValueError:
+            logger.warning(
+                "Valeur invalide pour %s=%r. Valeur par defaut %s utilisee.",
+                env_name,
+                raw_value,
+                default_value,
+            )
+            return default_value
+
+        if value < 0:
+            logger.warning(
+                "Valeur negative pour %s=%r. Valeur par defaut %s utilisee.",
+                env_name,
+                raw_value,
+                default_value,
+            )
+            return default_value
+
+        return value
+
+    return default_value
+
+
+def get_weather_window() -> tuple[int, int]:
+    past_days = _read_positive_int_from_env(("PAST_DAYS",), DEFAULT_PAST_DAYS)
+    forecast_days = _read_positive_int_from_env(
+        ("FORECAST_DAYS", "FORCAST_DAYS"),
+        DEFAULT_FORECAST_DAYS,
+    )
+    return past_days, forecast_days
+
+
+def dataframe_to_csv_bytes(df: pd.DataFrame) -> bytes:
+    return df.to_csv(index=False).encode("utf-8")
+
+
+def collect_meteo_csv_contents(
+    past_days: int | None = None,
+    forecast_days: int | None = None,
+) -> dict[str, bytes]:
+    effective_past_days, effective_forecast_days = get_weather_window()
+    if past_days is not None:
+        effective_past_days = past_days
+    if forecast_days is not None:
+        effective_forecast_days = forecast_days
+
+    csv_contents: dict[str, bytes] = {}
+
+    for city_name, (latitude, longitude) in CITIES.items():
+        meteo_payload = get_meteo_forecast(
+            latitude,
+            longitude,
+            effective_past_days,
+            effective_forecast_days,
+        )
+        if not meteo_payload:
+            logger.warning(
+                "Aucune donnee meteo recuperee pour %s. Fichier ignore.", city_name
+            )
+            continue
+
+        df_meteo = json_to_dataframe(meteo_payload)
+        if df_meteo.empty:
+            logger.warning(
+                "Donnees meteo vides pour %s. Fichier ignore.", city_name
+            )
+            continue
+
+        csv_contents[f"meteo_{city_name}.csv"] = dataframe_to_csv_bytes(df_meteo)
+
+    return csv_contents
 
 
 def get_meteo_forecast(
@@ -118,18 +201,19 @@ def save_meteo_to_csv(df: pd.DataFrame, city_name: str):
 
     import os
 
+    csv_content = dataframe_to_csv_bytes(df)
+
     dir_path = "data/meteo"
     os.makedirs(dir_path, exist_ok=True)
     file_path = f"{dir_path}/meteo_{city_name}.csv"
-    df.to_csv(file_path, index=False)
+    with open(file_path, "wb") as file_handle:
+        file_handle.write(csv_content)
     logger.info(f"Données météorologiques enregistrées dans {file_path}")
 
     # Upload to GCP bucket
     bucket = connect_to_bucket()
     if bucket is not None:
-        with open(file_path, "r") as f:
-            content = f.read()
-            upload_data_in_bucket(bucket, content, f"meteo_{city_name}")
+        upload_data_in_bucket(bucket, csv_content, f"meteo_{city_name}")
         logger.info(f"Fichier {file_path} uploadé dans le bucket GCP.")
     else:
         logger.error("Impossible de se connecter au bucket GCP pour l'upload.")
@@ -137,6 +221,8 @@ def save_meteo_to_csv(df: pd.DataFrame, city_name: str):
 
 def run_ingestion() -> None:
     """Récupère les données météo de toutes les villes et les enregistre en CSV."""
+    past_days, forecast_days = get_weather_window()
+
     for city_name, (latitude, longitude) in CITIES.items():
         meteo_payload = get_meteo_forecast(
             latitude, longitude, past_days, forecast_days

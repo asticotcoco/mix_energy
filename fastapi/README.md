@@ -23,6 +23,7 @@ The service reads:
 - `GET /tables` lists all table names in the gold dataset.
 - `GET /tables/{table_name}/columns` returns the list of columns for a specific table.
 - `GET /tables/{table_name}` queries a table with optional `columns`, `filters`, and `limit` query parameters.
+- The optional `layer` query parameter accepts `raw`, `silver`, or `gold` and defaults to `gold`.
 - `POST /predict/national` ask for a prediction of the national energy consumption of the next 15 minutes
 - `POST /predict/region` ask for a prediction of the energy consumption of the next 15 minutes of a specific France region
 
@@ -30,8 +31,11 @@ Example URLs:
 
 ```bash
 curl http://localhost:8888/tables
+curl 'http://localhost:8888/tables?layer=silver'
 curl http://localhost:8888/tables/kpi/columns
+curl 'http://localhost:8888/tables/meteo_by_city/columns?layer=silver'
 curl 'http://localhost:8888/tables/nat_cons_agre_j?columns=*' # All columns
+curl 'http://localhost:8888/tables/air_quality_by_city?layer=silver&limit=10'
 curl 'http://localhost:8888/tables/nat_cons_agre_j?columns=date,region&filters=[{"field":"region","operator":"eq","value":"FR"}]&limit=10'
 curl -X 'POST' 'http://localhost:8888/predict/national' -H 'accept: application/json' -d ''
 curl -X 'POST' 'http://localhost:8888/predict/region?code_insee_region=11' -H 'accept: application/json' -d ''
