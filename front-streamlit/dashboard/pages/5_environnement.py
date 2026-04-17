@@ -25,9 +25,9 @@ from dashboard.dashboard_share import (
 )
 
 WEATHER_METRICS = {
-    "temperature_2m": "Temperature 2m (degC)",
-    "relative_humidity_2m": "Humidite relative (%)",
-    "precipitation": "Precipitations (mm)",
+    "temperature_2m": "Température 2m (°C)",
+    "relative_humidity_2m": "Humidité relative (%)",
+    "precipitation": "Précipitations (mm)",
     "cloud_cover": "Couverture nuageuse (%)",
     "pressure_msl": "Pression MSL (hPa)",
     "wind_speed_10m": "Vent 10m (km/h)",
@@ -630,7 +630,7 @@ with kpi_col4:
     st.metric("Qualite de l'air", _resolve_air_quality_label(latest_air_quality))
 
 tab_weather, tab_air, tab_map, tab_data = st.tabs(
-    ["Meteo", "Qualite de l'air", "Carte ATMO", "Donnees"]
+    ["Météo", "Qualité de l'air", "Carte ATMO", "Données"]
 )
 
 with tab_weather:
