@@ -356,8 +356,8 @@ def build_deck() -> Presentation:
             "Les pages metier sont separees entre national, regional, historique et temps reel.",
             "Le dashboard exploite les endpoints exposes par FastAPI.",
         ],
-        "front-streamlit/dashboard/dashboard_app.py",
-        read_snippet("front-streamlit/dashboard/dashboard_app.py", 10, 40),
+        "front-streamlit/dashboard/Accueil_des_dashboards.py",
+        read_snippet("front-streamlit/dashboard/Accueil_des_dashboards.py", 10, 40),
     )
 
     add_code_slide(

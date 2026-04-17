@@ -15,7 +15,7 @@
 1. Start FastAPI first (port 8890 by default).
 2. Start Streamlit from this folder:
 
-   poetry run streamlit run dashboard/dashboard_app.py
+   poetry run streamlit run dashboard/Accueil_des_dashboards.py
 
 The dashboard includes an environment page with a hybrid data strategy: hourly meteo_by_city remains on silver, the daily air_quality_by_city summary uses gold, and the ATMO map keeps the detailed silver layer.
 
