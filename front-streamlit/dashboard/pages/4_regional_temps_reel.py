@@ -210,7 +210,7 @@ if df_chart is not None:
             plot_bgcolor=BASE_LAYOUT.get("plot_bgcolor"),
             font=BASE_LAYOUT.get("font"),
             title={
-                "text": "Production regionale d'electricite et taux de CO2 - 30 derniers jours glissants",
+                "text": "Production régionale d'électricité et taux de CO2 - 30 derniers jours glissants",
                 "x": 0.5,
                 "xanchor": "center",
                 "y": 0.98,
@@ -294,10 +294,10 @@ if df_chart is not None:
         st.markdown(
             """
 <div class="chart-card">
-  <div class="chart-title">⚡ Production regionale et 🟦 CO2 quotidien (30 jours glissants)</div>
+  <div class="chart-title">⚡ Production régionale et 🟦 CO2 quotidien (30 jours glissants)</div>
   <div class="chart-desc">
-    Les deux graphiques sont affiches l'un au dessus de l'autre avec la meme largeur,
-    afin de faciliter la comparaison entre la production d'electricite et le taux de CO2.
+    Les deux graphiques sont affichés l'un au dessus de l'autre avec la même largeur,
+    afin de faciliter la comparaison entre la production d'électricité et le taux de CO2.
   </div>
   <p align=right><b>Consommation estimée à venir :</b> {:.2f} MW</p>
 </div>

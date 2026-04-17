@@ -40,9 +40,9 @@ SOURCE_COLUMNS = {
 }
 
 COLORS = {
-    "Fioul": "#ff9822",
+    "Fioul": "#e53935",
     "Charbon": "#030100",
-    "Gaz": "#ff7043",
+    "Gaz": "#ff7a00",
     "Nucleaire": "#00e0ff",
     "Eolien": "#69ff69",
     "Solaire": "#ffd600",
@@ -400,8 +400,8 @@ div[data-baseweb="select"] {{
     border-color: rgba(0, 180, 255, 0.3) !important;
 }}
 [data-testid="stSidebar"] div[data-baseweb="select"] svg {{
-    fill: #c8e6ff !important;
-    color: #c8e6ff !important;
+    fill: #26465a !important;
+    color: #26465a !important;
 }}
 
 /* Date input styling for sidebar */

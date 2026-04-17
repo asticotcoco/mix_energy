@@ -34,7 +34,7 @@ render_sidebar()
 next_conso = get_next_conso_nat()
 
 st.title(
-    "Donnees nationales en temps reel de la production d'electricite en France",
+    "Données nationales en temps réel de la production d'électricité en France",
     text_alignment="center",
     width="stretch",
 )
@@ -93,8 +93,8 @@ if df_chart is not None:
                 vertical_spacing=0.1,
                 row_heights=[0.62, 0.38],
                 subplot_titles=(
-                    "Production nationale d'electricite",
-                    "Taux de CO2 quotidien - derniere valeur du jour",
+                    "Production nationale d'électricité",
+                    "Taux de CO2 quotidien - dernière valeur du jour",
                 ),
             )
         else:
@@ -157,7 +157,7 @@ if df_chart is not None:
             plot_bgcolor=BASE_LAYOUT.get("plot_bgcolor"),
             font=BASE_LAYOUT.get("font"),
             title={
-                "text": "Production nationale d'electricite et taux de CO2 - 30 derniers jours glissants",
+                "text": "Production nationale d'électricité et taux de CO2 - 30 derniers jours glissants",
                 "x": 0.5,
                 "xanchor": "center",
                 "y": 0.98,
@@ -243,8 +243,8 @@ if df_chart is not None:
         <div class="chart-card">
             <div class="chart-title">⚡ Production nationale et 🟦 CO2 quotidien (30 jours glissants)</div>
           <div class="chart-desc">
-                Les deux graphiques sont affiches l'un au dessus de l'autre avec la meme largeur,
-                afin de faciliter la comparaison entre la production d'electricite et le taux de CO2.
+                Les deux graphiques sont affichés l'un au dessus de l'autre avec la même largeur,
+                afin de faciliter la comparaison entre la production d'électricité et le taux de CO2.
           </div>
           <p align=right><b>Consommation estimée à venir :</b> {:.2f} MW</p>
         </div>

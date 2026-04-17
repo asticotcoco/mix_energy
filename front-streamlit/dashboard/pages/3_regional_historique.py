@@ -130,10 +130,10 @@ fig3.update_layout(
 st.markdown(
     """
 <div class="chart-card">
-  <div class="chart-title">🗺️ Regional Energy Mix Heatmap</div>
+  <div class="chart-title">🗺️ Carte thermique du mix énergétique régional</div>
   <div class="chart-desc">
-    Heatmap of electricity production (TWh) across all 12 French metropolitan regions and 6 energy source categories.
-    Brighter cells = higher output. Useful for identifying regional specializations and energy dependence patterns.
+    Carte thermique de la production d'électricité (TWh) dans les 12 métropoles françaises et pour 6 catégories de sources d'énergie.
+    Les cellules plus claires correspondent à une production plus importante. Utile pour identifier les spécialisations régionales et les profils de dépendance énergétique.
   </div>
 </div>
 """,

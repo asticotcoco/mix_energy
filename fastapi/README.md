@@ -4,12 +4,18 @@ Read-only API for the Mix Energy BigQuery dataset.
 
 ## Run locally
 
-Install dependencies from this folder and load the repository `.env` file:
+Use the repository Python environment and load the repository `.env` file. The API imports the shared `predict` package from the repository, so the local Python path must include both `fastapi/src` and `predict/src`.
 
 ```bash
-cd fastapi
-poetry install
-poetry run uvicorn mix_energy_api.main:app --reload --host 0.0.0.0 --port 8890
+cd ..
+source .venv/bin/activate
+PYTHONPATH=fastapi/src:predict/src python -m uvicorn mix_energy_api.main:app --reload --host 0.0.0.0 --port 8890
+```
+
+Equivalent Make target:
+
+```bash
+make start_fastapi
 ```
 
 The service reads:

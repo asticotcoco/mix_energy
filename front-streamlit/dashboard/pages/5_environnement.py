@@ -547,11 +547,11 @@ st.title(
 st.markdown(
     """
 <div class="chart-card">
-  <div class="chart-title">🌍 Vue hybride meteo silver + synthese air gold</div>
+  <div class="chart-title">🌍 Vue hybride météo silver + synthèse air gold</div>
   <div class="chart-desc">
-    Cette page combine la meteo horaire detaillee issue de meteo_by_city en silver,
-    une synthese quotidienne de la qualite de l'air issue de air_quality_by_city en gold,
-    et une carte ATMO detaillee qui reste alimentee par la couche silver.
+    Cette page combine la météo horaire détaillée issue de meteo_by_city en silver,
+    une synthèse quotidienne de la qualité de l'air issue de air_quality_by_city en gold,
+    et une carte ATMO détaillée qui reste alimentée par la couche silver.
   </div>
 </div>
 """,
@@ -637,9 +637,9 @@ with tab_weather:
     st.markdown(
         """
 <div class="chart-card">
-  <div class="chart-title">🌦️ Tendances meteo</div>
+  <div class="chart-title">🌦️ Tendances météo</div>
   <div class="chart-desc">
-    Les indicateurs selectionnes sont traces sur des panneaux separes pour conserver leurs unites et eviter les axes trompeurs.
+    Les indicateurs sélectionnés sont tracés sur des panneaux séparés pour conserver leurs unités et éviter les axes trompeurs.
   </div>
 </div>
 """,
@@ -647,7 +647,7 @@ with tab_weather:
     )
     weather_figure = _build_weather_figure(filtered_meteo, weather_metrics)
     if weather_figure is None:
-        st.info("Aucune donnee meteo disponible sur cette fenetre pour les indicateurs selectionnes.")
+        st.info("Aucune donnée météo disponible sur cette fenêtre pour les indicateurs sélectionnés.")
     else:
         st.plotly_chart(
             weather_figure,
@@ -659,10 +659,10 @@ with tab_air:
     st.markdown(
         """
 <div class="chart-card">
-  <div class="chart-title">🌫️ Synthese qualite de l'air</div>
+  <div class="chart-title">🌫️ Synthèse qualité de l'air</div>
   <div class="chart-desc">
-      La heatmap affiche la synthese quotidienne a l'echelle de la ville issue de la couche gold.
-      Le selecteur de zone ATMO reste reserve a la carte detaillee plus bas.
+      La heatmap affiche la synthèse quotidienne à l'échelle de la ville issue de la couche gold.
+      Le sélecteur de zone ATMO reste réservé à la carte détaillée plus bas.
   </div>
 </div>
 """,
@@ -670,7 +670,7 @@ with tab_air:
     )
     air_quality_figure = _build_air_quality_heatmap(daily_air_quality, air_quality_metrics)
     if air_quality_figure is None:
-        st.info("Aucune donnee qualite de l'air disponible sur cette fenetre pour les indicateurs selectionnes.")
+        st.info("Aucune donnée qualité de l'air disponible sur cette fenêtre pour les indicateurs sélectionnés.")
     else:
         st.plotly_chart(
             air_quality_figure,
@@ -682,11 +682,11 @@ with tab_air:
         st.markdown(
             f"""
 <div class="chart-card">
-  <div class="chart-title">Derniere synthese disponible</div>
+  <div class="chart-title">Dernière synthèse disponible</div>
   <div class="chart-desc">
                 Date: {_format_timestamp(latest_air_quality.get('date'))}<br>
-                Derniere mise a jour: {_format_timestamp(latest_air_quality.get('last_update_at'))}<br>
-                Zone la plus degradee: {latest_air_quality.get('worst_quality_zone', 'N/A')}<br>
+                Dernière mise à jour: {_format_timestamp(latest_air_quality.get('last_update_at'))}<br>
+                Zone la plus dégradée: {latest_air_quality.get('worst_quality_zone', 'N/A')}<br>
                 Type de zone: {latest_air_quality.get('worst_quality_zone_type', 'N/A')}
   </div>
 </div>
@@ -700,7 +700,7 @@ with tab_map:
 <div class="chart-card">
     <div class="chart-title">🗺️ Localisation des zones ATMO</div>
     <div class="chart-desc">
-        La carte montre la derniere mesure disponible par zone sur la fenetre selectionnee, avec une couleur plus chaude quand l'indice est plus eleve.
+        La carte montre la dernière mesure disponible par zone sur la fenêtre sélectionnée, avec une couleur plus chaude quand l'indice est plus élevé.
     </div>
 </div>
 """,
@@ -708,7 +708,7 @@ with tab_map:
     )
     air_quality_map = _build_air_quality_map(filtered_air_quality_detail)
     if air_quality_map is None:
-        st.info("Aucune coordonnee exploitable n'est disponible pour afficher la carte ATMO sur cette selection.")
+        st.info("Aucune coordonnée exploitable n'est disponible pour afficher la carte ATMO sur cette sélection.")
     else:
         st.plotly_chart(
             air_quality_map,
@@ -720,10 +720,10 @@ with tab_data:
     st.markdown(
         """
 <div class="chart-card">
-  <div class="chart-title">📋 Donnees filtrees</div>
+  <div class="chart-title">📋 Données filtrées</div>
   <div class="chart-desc">
-                Extrait des enregistrements charges pour la ville et la periode selectionnees,
-                avec la meteo detaillee en silver et la synthese quotidienne air en gold.
+                Extrait des enregistrements chargés pour la ville et la période sélectionnées,
+                avec la météo détaillée en silver et la synthèse quotidienne air en gold.
   </div>
 </div>
 """,

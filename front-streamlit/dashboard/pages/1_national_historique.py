@@ -82,7 +82,7 @@ if df_chart is not None:
 
     # Validate dates and filter dataframe
     if start_date > end_date:
-        st.error("La date de debut doit etre anterieure ou egale a la date de fin.")
+        st.error("La date de début doit être antérieure ou égale à la date de fin.")
         st.stop()
 
     df1 = df1[
@@ -120,7 +120,7 @@ if df_chart is not None:
         layout = {
             **BASE_LAYOUT,
             "title": {
-                "text": "Production nationale d'electricite par jour du mois",
+                "text": "Production nationale d'électricité par jour du mois",
                 "x": 0.5,
                 "xanchor": "center",
                 "y": 0.98,
@@ -162,8 +162,8 @@ if df_chart is not None:
     <div class="chart-title">⚡ Production nationale par jour (profil journalier)</div>
   <div class="chart-desc">
       Axe X: jours. Axe Y: production.
-      Choisissez une date de debut et de fin pour filtrer les donnees affichees.
-        Selectionnez les filieres a comparer; une courbe est affichee par filiere.
+      Choisissez une date de début et de fin pour filtrer les données affichées.
+        Sélectionnez les filières à comparer une courbe est affichée par filière.
   </div>
 </div>
 """,

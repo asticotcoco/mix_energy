@@ -23,11 +23,11 @@ setup :
 ########################################################################################################################
 .PHONY: start_fastapi
 start_fastapi:
-	fastapi run fastapi/main.py --reload --port 8890
+	PYTHONPATH=fastapi/src:predict/src python -m uvicorn mix_energy_api.main:app --reload --host 0.0.0.0 --port 8890
 
 .PHONY: start_fastapi_dev
 start_fastapi_dev:
-	fastapi dev fastapi/main.py --reload --port 8890
+	PYTHONPATH=fastapi/src:predict/src python -m uvicorn mix_energy_api.main:app --reload --host 0.0.0.0 --port 8890
 
 ########################################################################################################################
 

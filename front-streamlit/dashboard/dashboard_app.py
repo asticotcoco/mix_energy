@@ -99,25 +99,25 @@ with col1:
 with col2:
     st.page_link(
         "pages/2_national_temps_reel.py",
-        label="National Temps Reel",
+        label="National Temps Réel",
         use_container_width=True,
     )
 with col3:
     st.page_link(
         "pages/3_regional_historique.py",
-        label="Regional Historique",
+        label="Régional Historique",
         use_container_width=True,
     )
 with col4:
     st.page_link(
         "pages/4_regional_temps_reel.py",
-        label="Regional Temps Reel",
+        label="Régional Temps Réel",
         use_container_width=True,
     )
 with col5:
     st.page_link(
         "pages/5_environnement.py",
-        label="Meteo & Air",
+        label="Météo & Air",
         use_container_width=True,
     )
 
@@ -126,9 +126,8 @@ st.markdown(
 <div class="chart-card">
   <div class="chart-title">Accueil</div>
   <div class="chart-desc">
-    Cette page d'accueil est volontairement legere: elle ne charge aucune donnee.
-    Chaque page fonctionnelle charge uniquement ses propres informations depuis FastAPI au moment ou vous l'ouvrez.
-    Cela permet un demarrage rapide de l'accueil et un usage plus cible des appels API.
+                Bienvenue sur la page d'accueil des tableaux de bord nationaux et régionaux historique et temps réel de production d'énergie en France complétés avec le tableau de bord des données météorologiques et de qualité d'air au niveau national.
+                Ces tableaux visent à présenter la situation quotidienne et temps réel des moyens de production d'énergie et la prédiction au niveau national ou régional.
   </div>
 </div>
 """,
@@ -140,11 +139,11 @@ st.markdown(
 <div class="chart-card">
   <div class="chart-title">Pages disponibles</div>
   <div class="chart-desc">
-    1. National Historique: donnees annee en cours + annee precedente.<br>
-    2. National Temps Reel: donnees du mois en cours avec refresh.<br>
-    3. Regional Historique: region choisie, annee en cours + annee precedente.<br>
-        4. Regional Temps Reel: region choisie, mois en cours avec refresh.<br>
-                5. Meteo & Air: meteo detaillee en silver, synthese air quotidienne en gold, carte ATMO detaillee en silver.
+    1. National Historique: données année en cours + année précédente.<br>
+        2. National Temps Réel: données du mois en cours avec refresh.<br>
+    3. Régional Historique: région choisie, année en cours + année précédente.<br>
+                4. Régional Temps Réel: région choisie, mois en cours avec refresh.<br>
+                5. Météo & Air: météo détaillée en silver, synthèse air quotidienne en gold, carte ATMO détaillée en silver.
   </div>
 </div>
 """,
