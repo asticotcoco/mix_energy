@@ -316,7 +316,7 @@ def _build_weather_figure(frame: pd.DataFrame, metrics: list[str]) -> go.Figure 
         height=260 * len(available_metrics) + 110,
         hovermode="x unified",
         title={
-            "text": "Evolution meteo horaire sur la fenetre selectionnee",
+            "text": "Evolution météo horaire sur la fenêtre sélectionnée",
             "x": 0.5,
             "xanchor": "center",
             "font": {"size": 26, "color": "#ffffff"},
@@ -364,7 +364,7 @@ def _build_air_quality_heatmap(frame: pd.DataFrame, metrics: list[str]) -> go.Fi
         margin={"l": 80, "r": 40, "t": 80, "b": 70},
         height=460,
         title={
-            "text": "Synthese quotidienne de la qualite de l'air",
+            "text": "Synthèse quotidienne de la qualité de l'air",
             "x": 0.5,
             "xanchor": "center",
             "font": {"size": 26, "color": "#ffffff"},
@@ -438,7 +438,7 @@ def _build_air_quality_map(frame: pd.DataFrame) -> go.Figure | None:
         margin={"l": 0, "r": 0, "t": 60, "b": 0},
         height=520,
         title={
-            "text": "Carte des zones ATMO visibles sur la fenetre selectionnee",
+            "text": "Carte des zones ATMO visibles sur la fenêtre sélectionnée",
             "x": 0.5,
             "xanchor": "center",
             "font": {"size": 24, "color": "#ffffff"},
@@ -535,7 +535,7 @@ with st.sidebar:
         st.rerun()
 
 if start_date > end_date:
-    st.error("La date de debut doit etre anterieure ou egale a la date de fin.")
+    st.error("La date de début doit être antérieure ou égale à la date de fin.")
     st.stop()
 
 st.title(
