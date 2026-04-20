@@ -257,11 +257,11 @@ if df_chart is not None:
         )
     else:
         st.warning(
-            "Veuillez selectionner au moins une variable d'energie pour afficher le graphique."
+            "Veuillez sélectionner au moins une variable d'énergie pour afficher le graphique."
         )
 else:
     st.error(
-        "Les donnees ne sont pas disponibles. Veuillez verifier le chargement des donnees."
+        "Les données ne sont pas disponibles. Veuillez vérifier le chargement des données."
     )
 
 st.markdown(
