@@ -90,6 +90,27 @@ if df_chart is not None:
         & (df1["plot_date"].dt.date <= end_date)
     ]
 
+    use_daily_ticks = (end_date - start_date).days <= 31
+    xaxis_config = {
+        **styled_axis("Jour du mois"),
+        "title": {
+            "text": "Jour du mois",
+            "font": {"size": 16, "color": "#ffffff"},
+        },
+        "tickfont": {"size": 16, "color": "#ffffff"},
+    }
+    if use_daily_ticks:
+        xaxis_config.update(
+            {
+                "tickmode": "linear",
+                "tick0": start_date.isoformat(),
+                "dtick": 24 * 60 * 60 * 1000,
+                "tickformat": "%d",
+            }
+        )
+    else:
+        xaxis_config.update({"tickformat": "%d/%m"})
+
     # Create time series chart
     if selected_y:
         fig1 = go.Figure()
@@ -128,15 +149,7 @@ if df_chart is not None:
                 "font": {"size": 30, "color": "#00dcff"},
             },
             "margin": {"l": 80, "r": 80, "t": 120, "b": 80},
-            "xaxis": {
-                **styled_axis("Jour du mois"),
-                "title": {
-                    "text": "Jour du mois",
-                    "font": {"size": 16, "color": "#ffffff"},
-                },
-                "tickformat": "%d",
-                "tickfont": {"size": 16, "color": "#ffffff"},
-            },
+            "xaxis": xaxis_config,
             "yaxis": {
                 **styled_axis("Production"),
                 "title": {
