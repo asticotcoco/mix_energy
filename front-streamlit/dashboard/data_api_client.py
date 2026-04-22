@@ -32,6 +32,8 @@ class FastAPIClient:
     base_url: str
     timeout_seconds: int = 25
     per_call_limit: int = 1000
+    api_key: str | None = None
+    api_key_header_name: str = "X-API-Key"
 
     @classmethod
     def from_environment(cls) -> "FastAPIClient":
@@ -39,11 +41,22 @@ class FastAPIClient:
         base_url = os.getenv("FASTAPI_BASE_URL", DEFAULT_BASE_URL).rstrip("/")
         timeout_seconds = int(os.getenv("FASTAPI_TIMEOUT_SECONDS", "25"))
         per_call_limit = int(os.getenv("FASTAPI_PAGE_LIMIT", "1000"))
+        raw_api_key = os.getenv("FASTAPI_API_KEY")
+        api_key = raw_api_key.strip() if raw_api_key and raw_api_key.strip() else None
+        raw_api_key_header_name = os.getenv("FASTAPI_API_KEY_HEADER", "X-API-Key")
+        api_key_header_name = raw_api_key_header_name.strip() or "X-API-Key"
         return cls(
             base_url=base_url,
             timeout_seconds=timeout_seconds,
             per_call_limit=per_call_limit,
+            api_key=api_key,
+            api_key_header_name=api_key_header_name,
         )
+
+    def _request_headers(self) -> dict[str, str]:
+        if not self.api_key:
+            return {}
+        return {self.api_key_header_name: self.api_key}
 
     def health(self) -> dict[str, Any]:
         return self._safe_get_json("/health")
@@ -87,6 +100,7 @@ class FastAPIClient:
             response = requests.get(
                 f"{self.base_url}{path}",
                 params=params,
+                headers=self._request_headers(),
                 timeout=self.timeout_seconds,
             )
             response.raise_for_status()
@@ -117,6 +131,7 @@ class FastAPIClient:
             response = requests.post(
                 f"{self.base_url}{path}",
                 params=params,
+                headers=self._request_headers(),
                 timeout=self.timeout_seconds,
             )
             response.raise_for_status()

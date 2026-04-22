@@ -34,6 +34,8 @@ class Settings:
         default_factory=lambda: DEFAULT_CORS_ORIGINS
     )
     include_hidden_tables: bool = False
+    api_key: str | None = None
+    api_key_header_name: str = "X-API-Key"
 
     def dataset_id_for_layer(self, layer: str) -> str:
         normalized_layer = layer.strip().lower()
@@ -89,6 +91,10 @@ def load_settings() -> Settings:
     default_limit = int(os.getenv("FASTAPI_DEFAULT_LIMIT", "100"))
     max_limit = int(os.getenv("FASTAPI_MAX_LIMIT", "1000"))
     origins = _parse_origins(os.getenv("FASTAPI_CORS_ORIGINS"))
+    raw_api_key = os.getenv("FASTAPI_API_KEY")
+    api_key = raw_api_key.strip() if raw_api_key and raw_api_key.strip() else None
+    raw_api_key_header_name = os.getenv("FASTAPI_API_KEY_HEADER", "X-API-Key")
+    api_key_header_name = raw_api_key_header_name.strip() or "X-API-Key"
 
     return Settings(
         project_id=project_id,
@@ -99,4 +105,6 @@ def load_settings() -> Settings:
         max_limit=max_limit,
         default_layer=default_layer,
         allowed_origins=origins,
+        api_key=api_key,
+        api_key_header_name=api_key_header_name,
     )

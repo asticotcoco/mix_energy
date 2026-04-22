@@ -1,10 +1,13 @@
 from __future__ import annotations
 
 import json
+import secrets
 from typing import Any
 
-from fastapi import Depends, FastAPI, HTTPException, Query, Request
+from fastapi import Depends, FastAPI, HTTPException, Query, Request, Security
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import RedirectResponse
+from fastapi.security import APIKeyHeader
 
 from .bigquery_service import (
     BigQueryDatasetService,
@@ -64,6 +67,31 @@ def create_app() -> FastAPI:
         allow_headers=["*"],
     )
 
+    protected_dependencies: list[Any] = []
+    if settings.api_key:
+        api_key_header = APIKeyHeader(
+            name=settings.api_key_header_name,
+            auto_error=False,
+            description="API key required for protected endpoints.",
+        )
+
+        def require_api_key(
+            provided_api_key: str | None = Security(api_key_header),
+        ) -> None:
+            if provided_api_key and secrets.compare_digest(
+                provided_api_key, settings.api_key
+            ):
+                return
+            raise HTTPException(
+                status_code=401,
+                detail=(
+                    "Missing or invalid API key in header "
+                    f"'{settings.api_key_header_name}'"
+                ),
+            )
+
+        protected_dependencies.append(Depends(require_api_key))
+
     @app.on_event("startup")
     def _startup() -> None:
         app.state.settings = settings
@@ -79,6 +107,8 @@ def create_app() -> FastAPI:
                 default_layer=settings.default_layer,
                 allowed_origins=settings.allowed_origins,
                 include_hidden_tables=settings.include_hidden_tables,
+                api_key=settings.api_key,
+                api_key_header_name=settings.api_key_header_name,
             )
             services[layer] = BigQueryDatasetService.create(layer_settings)
 
@@ -93,6 +123,10 @@ def create_app() -> FastAPI:
             raise HTTPException(status_code=404, detail=f"Dataset layer '{layer}' is not available")
         return service
 
+    @app.get("/", include_in_schema=False)
+    def root() -> RedirectResponse:
+        return RedirectResponse(url="/docs")
+
     @app.get("/health")
     def health(request: Request, layer: DatasetLayer = Query(default="gold")) -> dict[str, str]:
         service = get_service(request, layer=layer)
@@ -103,7 +137,11 @@ def create_app() -> FastAPI:
             "layer": layer,
         }
 
-    @app.get("/tables", response_model=DatasetOverview)
+    @app.get(
+        "/tables",
+        response_model=DatasetOverview,
+        dependencies=protected_dependencies,
+    )
     def list_tables(
         request: Request,
         layer: DatasetLayer = Query(default="gold"),
@@ -116,7 +154,11 @@ def create_app() -> FastAPI:
             "tables": service.list_tables(),
         }
 
-    @app.get("/tables/{table_name}/columns", response_model=TableColumns)
+    @app.get(
+        "/tables/{table_name}/columns",
+        response_model=TableColumns,
+        dependencies=protected_dependencies,
+    )
     def get_table_columns(
         request: Request,
         table_name: str,
@@ -141,7 +183,11 @@ def create_app() -> FastAPI:
                 pass
             raise HTTPException(status_code=404, detail=str(exc)) from exc
 
-    @app.get("/tables/{table_name}", response_model=QueryResponse)
+    @app.get(
+        "/tables/{table_name}",
+        response_model=QueryResponse,
+        dependencies=protected_dependencies,
+    )
     def query_table(
         request: Request,
         table_name: str,
@@ -185,7 +231,7 @@ def create_app() -> FastAPI:
         except BigQueryServiceError as exc:
             raise HTTPException(status_code=400, detail=str(exc)) from exc
 
-    @app.post("/predict/national")
+    @app.post("/predict/national", dependencies=protected_dependencies)
     def predict_nat(request: Request):
         service = get_service(request, layer="gold")
         predicted_val = predict_conso(service.client, True)
@@ -196,7 +242,7 @@ def create_app() -> FastAPI:
 
         return predicted_val
 
-    @app.post("/predict/region")
+    @app.post("/predict/region", dependencies=protected_dependencies)
     def predict_region(
         request: Request,
         code_insee_region: int,

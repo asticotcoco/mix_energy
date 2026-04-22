@@ -61,3 +61,66 @@ def test_health_and_tables_accept_layer_query(monkeypatch):
         assert tables_response.status_code == 200
         assert tables_response.json()["dataset_id"] == "prod_mix_energie"
         assert tables_response.json()["tables"] == ["sample_table"]
+
+
+def test_root_redirects_to_docs(monkeypatch):
+    settings = Settings(
+        project_id="mix-energie-gcp",
+        dataset_base="prod_mix_energie",
+        dataset_id="prod_mix_energie_gold",
+        credentials_path=Path("/tmp/fake.json"),
+    )
+
+    monkeypatch.setattr(main, "load_settings", lambda: settings)
+    monkeypatch.setattr(
+        BigQueryDatasetService,
+        "create",
+        lambda service_settings: _FakeService(service_settings),
+    )
+
+    app = main.create_app()
+    with TestClient(app) as client:
+        response = client.get("/", follow_redirects=False)
+        assert response.status_code == 307
+        assert response.headers["location"] == "/docs"
+
+
+def test_protected_routes_require_api_key_when_configured(monkeypatch):
+    settings = Settings(
+        project_id="mix-energie-gcp",
+        dataset_base="prod_mix_energie",
+        dataset_id="prod_mix_energie_gold",
+        credentials_path=Path("/tmp/fake.json"),
+        api_key="super-secret",
+    )
+
+    monkeypatch.setattr(main, "load_settings", lambda: settings)
+    monkeypatch.setattr(
+        BigQueryDatasetService,
+        "create",
+        lambda service_settings: _FakeService(service_settings),
+    )
+
+    app = main.create_app()
+    with TestClient(app) as client:
+        health_response = client.get("/health")
+        assert health_response.status_code == 200
+
+        unauthorized_response = client.get("/tables")
+        assert unauthorized_response.status_code == 401
+        assert unauthorized_response.json()["detail"] == (
+            "Missing or invalid API key in header 'X-API-Key'"
+        )
+
+        wrong_key_response = client.get(
+            "/tables",
+            headers={"X-API-Key": "wrong-secret"},
+        )
+        assert wrong_key_response.status_code == 401
+
+        authorized_response = client.get(
+            "/tables",
+            headers={"X-API-Key": "super-secret"},
+        )
+        assert authorized_response.status_code == 200
+        assert authorized_response.json()["tables"] == ["sample_table"]

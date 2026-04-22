@@ -4,7 +4,7 @@ Read-only API for the Mix Energy BigQuery dataset.
 
 ## Run locally
 
-Use the repository Python environment and load the repository `.env` file. The API imports the shared `predict` package from the repository, so the local Python path must include both `fastapi/src` and `predict/src`.
+Use the repository Python environment. The API loads the repository `.env` automatically via `python-dotenv`, and imports the shared `predict` package from the repository, so the local Python path must include both `fastapi/src` and `predict/src`.
 
 ```bash
 cd ..
@@ -23,6 +23,8 @@ The service reads:
 - `DATASET_ID_PROD` by default, falling back to `DATASET_ID_DEV`
 - `GOOGLE_APPLICATION_CREDENTIALS`, or `GOOGLE_APPLICATION_CREDENTIALS_CONTAINER` if the first one is not set
 - `MLFLOW_TRACKING_URI`, by default use 'http:\\\\localhost:8503'
+- `FASTAPI_API_KEY` to protect dataset and prediction endpoints with an API key
+- `FASTAPI_API_KEY_HEADER`, default `X-API-Key`
 
 ## Query pattern
 
@@ -45,6 +47,17 @@ curl 'http://localhost:8890/tables/air_quality_by_city?layer=silver&limit=10'
 curl 'http://localhost:8890/tables/nat_cons_agre_j?columns=date,region&filters=[{"field":"region","operator":"eq","value":"FR"}]&limit=10'
 curl -X 'POST' 'http://localhost:8890/predict/national' -H 'accept: application/json' -d ''
 curl -X 'POST' 'http://localhost:8890/predict/region?code_insee_region=11' -H 'accept: application/json' -d ''
+```
+
+## Optional API key protection
+
+If `FASTAPI_API_KEY` is set, dataset and prediction endpoints require the configured header on each request. The `/health` endpoint remains public for liveness checks.
+
+Example:
+
+```bash
+curl -H 'X-API-Key: super-secret' http://localhost:8890/tables
+curl -H 'X-API-Key: super-secret' 'http://localhost:8890/tables?layer=silver'
 ```
 
 The `filters` parameter must be JSON, for example:

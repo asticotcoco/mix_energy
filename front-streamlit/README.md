@@ -30,3 +30,8 @@ Example in repository .env or front-streamlit/.env:
 FASTAPI_BASE_URL=http://localhost:8890
 FASTAPI_TIMEOUT_SECONDS=25
 FASTAPI_PAGE_LIMIT=1000
+
+If FastAPI protection is enabled, add the same API key on the frontend side:
+
+FASTAPI_API_KEY=super-secret
+FASTAPI_API_KEY_HEADER=X-API-Key
