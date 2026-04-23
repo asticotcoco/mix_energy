@@ -12,7 +12,11 @@ Configure your local user IDs in .env (Linux)
 
 Start Airflow
 - Build/start initialization:
-	docker compose --env-file .env -f airflow/docker-compose.yaml --profile bootstrap run --rm airflow-init
+	docker compose --env-file .env -f airflow/docker-compose.yaml up -d postgres redis
+	container_id=$(docker compose --env-file .env -f airflow/docker-compose.yaml --profile bootstrap run -d --no-deps airflow-init)
+	docker wait "$container_id" >/dev/null
+	docker logs "$container_id"
+	docker rm -f "$container_id" >/dev/null
 - Start only Airflow runtime:
 	docker compose --env-file .env -f airflow/docker-compose.yaml up -d postgres redis airflow-dag-processor airflow-apiserver airflow-scheduler airflow-triggerer airflow-worker
 - Start MLflow independently:
@@ -24,4 +28,4 @@ Notes
 - This UID setup prevents permission issues on mounted folders (airflow/dags, airflow/logs, airflow/config, airflow/plugins).
 - Airflow API/UI is exposed on localhost:8502.
 - MLflow UI is exposed on localhost:8503.
-- A terminal can appear as "waiting for input" while Docker Compose is still following healthchecks; this startup path is non-interactive.
+- The bootstrap command runs detached, waits for completion, then prints logs and removes the one-shot container; this avoids false "waiting for input" terminal prompts from attached Compose sessions.

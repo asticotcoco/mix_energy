@@ -99,7 +99,15 @@ run_local_fastapi:
 
 .PHONY: init_local_airflow
 init_local_airflow:
-	$(AIRFLOW_COMPOSE) --profile bootstrap run --rm airflow-init
+	@set -e; \
+	$(AIRFLOW_COMPOSE) up -d postgres redis >/dev/null; \
+	container_id="$$($(AIRFLOW_COMPOSE) --profile bootstrap run -d --no-deps airflow-init)"; \
+	echo "airflow-init container: $$container_id"; \
+	docker wait "$$container_id" >/dev/null; \
+	exit_code="$$(docker inspect "$$container_id" --format='{{.State.ExitCode}}')"; \
+	docker logs "$$container_id"; \
+	docker rm -f "$$container_id" >/dev/null; \
+	exit "$$exit_code"
 
 .PHONY: run_local_airflow
 run_local_airflow:
