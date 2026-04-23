@@ -12,17 +12,37 @@ import plotly.graph_objects as go
 import streamlit as st
 from plotly.subplots import make_subplots
 
-from dashboard.dashboard_share import (
-    BASE_LAYOUT,
-    apply_global_style,
-    apply_widget_text_style,
-    clear_realtime_cache,
-    configure_page,
-    get_city_options,
-    get_environment_context,
-    render_sidebar,
-    styled_axis,
-)
+try:
+    from dashboard.dashboard_share import (
+        BASE_LAYOUT,
+        apply_global_style,
+        apply_widget_text_style,
+        clear_realtime_cache,
+        configure_page,
+        get_city_options,
+        get_environment_context,
+        render_sidebar,
+        styled_axis,
+    )
+except ModuleNotFoundError:
+    import sys
+    from pathlib import Path
+
+    dashboard_dir = Path(__file__).resolve().parents[1]
+    if str(dashboard_dir) not in sys.path:
+        sys.path.insert(0, str(dashboard_dir))
+
+    from dashboard_share import (
+        BASE_LAYOUT,
+        apply_global_style,
+        apply_widget_text_style,
+        clear_realtime_cache,
+        configure_page,
+        get_city_options,
+        get_environment_context,
+        render_sidebar,
+        styled_axis,
+    )
 
 WEATHER_METRICS = {
     "temperature_2m": "Température 2m (°C)",

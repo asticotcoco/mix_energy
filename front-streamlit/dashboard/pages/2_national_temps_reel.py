@@ -8,20 +8,43 @@ import plotly.graph_objects as go
 import streamlit as st
 from plotly.subplots import make_subplots
 
-from dashboard.dashboard_share import (
-    BASE_LAYOUT,
-    COLORS,
-    SOURCE_COLUMNS,
-    apply_global_style,
-    apply_widget_text_style,
-    configure_page,
-    get_national_realtime_context,
-    get_realtime_numeric_columns,
-    render_page2_sidebar_filters,
-    render_sidebar,
-    styled_axis,
-    get_next_conso_nat,
-)
+try:
+    from dashboard.dashboard_share import (
+        BASE_LAYOUT,
+        COLORS,
+        SOURCE_COLUMNS,
+        apply_global_style,
+        apply_widget_text_style,
+        configure_page,
+        get_national_realtime_context,
+        get_realtime_numeric_columns,
+        render_page2_sidebar_filters,
+        render_sidebar,
+        styled_axis,
+        get_next_conso_nat,
+    )
+except ModuleNotFoundError:
+    import sys
+    from pathlib import Path
+
+    dashboard_dir = Path(__file__).resolve().parents[1]
+    if str(dashboard_dir) not in sys.path:
+        sys.path.insert(0, str(dashboard_dir))
+
+    from dashboard_share import (
+        BASE_LAYOUT,
+        COLORS,
+        SOURCE_COLUMNS,
+        apply_global_style,
+        apply_widget_text_style,
+        configure_page,
+        get_national_realtime_context,
+        get_realtime_numeric_columns,
+        render_page2_sidebar_filters,
+        render_sidebar,
+        styled_axis,
+        get_next_conso_nat,
+    )
 
 configure_page()
 apply_global_style()

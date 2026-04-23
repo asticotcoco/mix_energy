@@ -16,21 +16,45 @@ try:
 except ImportError:  # pragma: no cover - optional dependency
     st_autorefresh = None
 
-from dashboard.dashboard_share import (
-    BASE_LAYOUT,
-    COLORS,
-    SOURCE_COLUMNS,
-    apply_global_style,
-    apply_widget_text_style,
-    configure_page,
-    get_region_options,
-    get_realtime_numeric_columns,
-    get_regional_realtime_context,
-    render_sidebar,
-    styled_axis,
-    plot_heatmap,
-    get_next_conso_reg,
-)
+try:
+    from dashboard.dashboard_share import (
+        BASE_LAYOUT,
+        COLORS,
+        SOURCE_COLUMNS,
+        apply_global_style,
+        apply_widget_text_style,
+        configure_page,
+        get_region_options,
+        get_realtime_numeric_columns,
+        get_regional_realtime_context,
+        render_sidebar,
+        styled_axis,
+        plot_heatmap,
+        get_next_conso_reg,
+    )
+except ModuleNotFoundError:
+    import sys
+    from pathlib import Path
+
+    dashboard_dir = Path(__file__).resolve().parents[1]
+    if str(dashboard_dir) not in sys.path:
+        sys.path.insert(0, str(dashboard_dir))
+
+    from dashboard_share import (
+        BASE_LAYOUT,
+        COLORS,
+        SOURCE_COLUMNS,
+        apply_global_style,
+        apply_widget_text_style,
+        configure_page,
+        get_region_options,
+        get_realtime_numeric_columns,
+        get_regional_realtime_context,
+        render_sidebar,
+        styled_axis,
+        plot_heatmap,
+        get_next_conso_reg,
+    )
 
 # ─────────────────────────────────────────────
 

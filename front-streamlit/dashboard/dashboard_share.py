@@ -19,7 +19,10 @@ import json
 
 import plotly.express as px
 
-from dashboard.data_api_client import FastAPIClient
+try:
+    from dashboard.data_api_client import FastAPIClient
+except ModuleNotFoundError:
+    from data_api_client import FastAPIClient
 
 APP_PAGE_TITLE = "PROJET MiX-ENERGIE"
 APP_PAGE_ICON = "⚡"

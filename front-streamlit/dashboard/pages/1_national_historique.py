@@ -7,18 +7,39 @@ Page 1: Vision national historique et consolidée des données de production d'�
 import pandas as pd
 import streamlit as st
 import plotly.graph_objects as go
-from dashboard.dashboard_share import (
-    BASE_LAYOUT,
-    COLORS,
-    SOURCE_COLUMNS,
-    apply_widget_text_style,
-    apply_global_style,
-    configure_page,
-    get_national_historical_context,
-    render_sidebar,
-    render_page1_sidebar_filters,
-    styled_axis,
-)
+try:
+    from dashboard.dashboard_share import (
+        BASE_LAYOUT,
+        COLORS,
+        SOURCE_COLUMNS,
+        apply_widget_text_style,
+        apply_global_style,
+        configure_page,
+        get_national_historical_context,
+        render_sidebar,
+        render_page1_sidebar_filters,
+        styled_axis,
+    )
+except ModuleNotFoundError:
+    import sys
+    from pathlib import Path
+
+    dashboard_dir = Path(__file__).resolve().parents[1]
+    if str(dashboard_dir) not in sys.path:
+        sys.path.insert(0, str(dashboard_dir))
+
+    from dashboard_share import (
+        BASE_LAYOUT,
+        COLORS,
+        SOURCE_COLUMNS,
+        apply_widget_text_style,
+        apply_global_style,
+        configure_page,
+        get_national_historical_context,
+        render_sidebar,
+        render_page1_sidebar_filters,
+        styled_axis,
+    )
 
 # ─────────────────────────────────────────────
 

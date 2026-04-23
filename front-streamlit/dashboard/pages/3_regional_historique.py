@@ -8,18 +8,39 @@ import streamlit as st
 import numpy as np
 import plotly.graph_objects as go
 
-from dashboard.dashboard_share import (
-    BASE_LAYOUT,
-    SOURCE_COLUMNS,
-    apply_global_style,
-    apply_widget_text_style,
-    configure_page,
-    get_energy_types,
-    get_regional_historical_context,
-    get_region_options,
-    render_sidebar,
-    plot_heatmap,
-)
+try:
+    from dashboard.dashboard_share import (
+        BASE_LAYOUT,
+        SOURCE_COLUMNS,
+        apply_global_style,
+        apply_widget_text_style,
+        configure_page,
+        get_energy_types,
+        get_regional_historical_context,
+        get_region_options,
+        render_sidebar,
+        plot_heatmap,
+    )
+except ModuleNotFoundError:
+    import sys
+    from pathlib import Path
+
+    dashboard_dir = Path(__file__).resolve().parents[1]
+    if str(dashboard_dir) not in sys.path:
+        sys.path.insert(0, str(dashboard_dir))
+
+    from dashboard_share import (
+        BASE_LAYOUT,
+        SOURCE_COLUMNS,
+        apply_global_style,
+        apply_widget_text_style,
+        configure_page,
+        get_energy_types,
+        get_regional_historical_context,
+        get_region_options,
+        render_sidebar,
+        plot_heatmap,
+    )
 
 FONT_COLOR = "#c8e6ff"
 AXIS_COLOR = "rgba(0,180,255,0.25)"

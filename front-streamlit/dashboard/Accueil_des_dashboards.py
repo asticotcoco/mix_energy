@@ -5,10 +5,16 @@ Homepage for the multipage Streamlit dashboard.
 
 import streamlit as st
 
-from dashboard.dashboard_share import (
-    apply_global_style,
-    configure_page,
-)
+try:
+    from dashboard.dashboard_share import (
+        apply_global_style,
+        configure_page,
+    )
+except ModuleNotFoundError:
+    from dashboard_share import (
+        apply_global_style,
+        configure_page,
+    )
 
 configure_page()
 apply_global_style()
