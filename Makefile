@@ -35,9 +35,29 @@ start_fastapi:
 start_fastapi_dev:
 	PYTHONPATH=$(FASTAPI_PYTHONPATH) $(PYTHON_BIN) -m uvicorn mix_energy_api.main:app --reload --host 0.0.0.0 --port 8890
 
+.PHONY: stop_fastapi
+stop_fastapi:
+	@pids="$$(pgrep -f 'mix_energy_api.main:app.*--port 8890' || true)"; \
+	if [ -n "$$pids" ]; then \
+		kill $$pids; \
+		echo "Stopped local FastAPI process(es): $$pids"; \
+	else \
+		echo "No local FastAPI process found on port 8890."; \
+	fi
+
 .PHONY: start_streamlit
 start_streamlit:
 	cd $(CURDIR)/front-streamlit && FASTAPI_BASE_URL=$${FASTAPI_BASE_URL:-http://localhost:8890} $(PYTHON_BIN) -m streamlit run $(STREAMLIT_APP) --server.port 8501 --server.address 0.0.0.0
+
+.PHONY: stop_streamlit
+stop_streamlit:
+	@pids="$$(pgrep -f 'streamlit run $(STREAMLIT_APP).*--server.port 8501' || true)"; \
+	if [ -n "$$pids" ]; then \
+		kill $$pids; \
+		echo "Stopped local Streamlit process(es): $$pids"; \
+	else \
+		echo "No local Streamlit process found on port 8501."; \
+	fi
 
 ########################################################################################################################
 

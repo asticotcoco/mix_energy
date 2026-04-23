@@ -18,6 +18,12 @@ Equivalent Make target:
 make start_fastapi
 ```
 
+Stop it from another terminal with:
+
+```bash
+make stop_fastapi
+```
+
 This Make target uses the repository virtual environment directly, so it does not depend on manual shell activation.
 
 The service reads:

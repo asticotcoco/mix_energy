@@ -220,7 +220,9 @@ Puis éditer le fichier **.env** et renseigner chaque variable
 
 > - **start_fastapi** : lance l'application exposant les API REST sur le port 8890
 > - **start_fastapi_dev**: lance l'application exposant les API REST en mode ***"dev"*** sur le port 8890
+> - **stop_fastapi** : arrête les processus FastAPI locaux lancés sur le port 8890
 > - **start_streamlit** : lance Streamlit localement sur le port 8501
+> - **stop_streamlit** : arrête les processus Streamlit locaux lancés sur le port 8501
 > - **start_mlflow_server**: démarre le serveur MLFLOW Docker sur le port 8503
 > - **run_local_mlflow**: alias pour démarrer uniquement MLflow
 

@@ -21,6 +21,8 @@ Start Airflow
 	docker compose --env-file .env -f airflow/docker-compose.yaml up -d postgres redis airflow-dag-processor airflow-apiserver airflow-scheduler airflow-triggerer airflow-worker
 - Start MLflow independently:
 	docker compose --env-file .env -f airflow/docker-compose.yaml --profile mlflow up -d mlflow
+- Stop MLflow independently:
+	docker compose --env-file .env -f airflow/docker-compose.yaml stop mlflow
 - Start the full local stack explicitly:
 	docker compose --env-file .env -f airflow/docker-compose.yaml --profile mlflow up -d mlflow postgres redis airflow-dag-processor airflow-apiserver airflow-scheduler airflow-triggerer airflow-worker
 
