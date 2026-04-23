@@ -18,6 +18,8 @@ Equivalent Make target:
 make start_fastapi
 ```
 
+This Make target uses the repository virtual environment directly, so it does not depend on manual shell activation.
+
 The service reads:
 - `PROJECT_ID`
 - `DATASET_ID_PROD` by default, falling back to `DATASET_ID_DEV`

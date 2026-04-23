@@ -220,7 +220,9 @@ Puis éditer le fichier **.env** et renseigner chaque variable
 
 > - **start_fastapi** : lance l'application exposant les API REST sur le port 8890
 > - **start_fastapi_dev**: lance l'application exposant les API REST en mode ***"dev"*** sur le port 8890
-> - **start_mlflow_server**: démarre le serveur MLFLOW sur le port 8503
+> - **start_streamlit** : lance Streamlit localement sur le port 8501
+> - **start_mlflow_server**: démarre le serveur MLFLOW Docker sur le port 8503
+> - **run_local_mlflow**: alias pour démarrer uniquement MLflow
 
 ### Commandes Docker
 
@@ -229,8 +231,11 @@ Puis éditer le fichier **.env** et renseigner chaque variable
 > - **build_local_streamlit** : construit en local l'image docker de l'application Streamlit
 > - **run_local_fastapi** : démarre le docker de l'application FastAPI en local sur la base des variables d'environnement renseignées
 > - **run_local_streamlit** : démarre l'ensemble des éléments nécessaires pour le front end Streamlit
-> - **run_local_airflow** : démarre l'ensemble des éléments nécessaires pour Airflow
+> - **init_local_airflow** : exécute uniquement l'initialisation one-shot d'Airflow
+> - **run_local_airflow** : démarre uniquement le runtime Airflow sans MLflow
+> - **run_local_airflow_full** : démarre Airflow et MLflow explicitement
 > - **stop_local_airflow** : arrête l'ensemble des éléments liés à Airflow
+> - **stop_local_mlflow** : arrête uniquement MLflow
 
 ### Commandes spéciales
 > - **coffee** : construit tous les modules en local

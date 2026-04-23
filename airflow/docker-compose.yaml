@@ -94,6 +94,8 @@ x-airflow-common:
     - ../ingest_dbt/src:/opt/project/src:ro
     - ../dbt:/opt/project/dbt
     - ../data/gcp:/opt/project/data/gcp:ro
+  extra_hosts:
+    - "host.docker.internal:host-gateway"
   user: "${AIRFLOW_UID:-50000}:0"
   depends_on:
     &airflow-common-depends-on
@@ -105,6 +107,8 @@ x-airflow-common:
 services:
   mlflow:
     image: ${AIRFLOW_IMAGE_NAME:-mix-energy-airflow:local}
+    profiles:
+      - mlflow
     env_file:
       - ${ENV_FILE_PATH:-../.env}
     user: "0:0"
@@ -160,6 +164,9 @@ services:
       start_period: 30s
     restart: always
 
+  # airflow-init is a one-shot bootstrap step. Keeping it in depends_on for
+  # long-running services makes targeted `docker compose up <service>` restart
+  # the init container each time after it has completed.
   airflow-apiserver:
     <<: *airflow-common
     command: api-server
@@ -174,10 +181,6 @@ services:
     restart: always
     depends_on:
       <<: *airflow-common-depends-on
-      mlflow:
-        condition: service_healthy
-      airflow-init:
-        condition: service_completed_successfully
 
   airflow-scheduler:
     <<: *airflow-common
@@ -191,10 +194,6 @@ services:
     restart: always
     depends_on:
       <<: *airflow-common-depends-on
-      mlflow:
-        condition: service_healthy
-      airflow-init:
-        condition: service_completed_successfully
 
   airflow-dag-processor:
     <<: *airflow-common
@@ -208,8 +207,6 @@ services:
     restart: always
     depends_on:
       <<: *airflow-common-depends-on
-      airflow-init:
-        condition: service_completed_successfully
 
   airflow-worker:
     <<: *airflow-common
@@ -229,12 +226,8 @@ services:
     restart: always
     depends_on:
       <<: *airflow-common-depends-on
-      mlflow:
-        condition: service_healthy
       airflow-apiserver:
-        condition: service_healthy
-      airflow-init:
-        condition: service_completed_successfully
+        condition: service_started
 
   airflow-triggerer:
     <<: *airflow-common
@@ -248,13 +241,11 @@ services:
     restart: always
     depends_on:
       <<: *airflow-common-depends-on
-      mlflow:
-        condition: service_healthy
-      airflow-init:
-        condition: service_completed_successfully
 
   airflow-init:
     <<: *airflow-common
+    profiles:
+      - bootstrap
     user: "0:0"
     entrypoint: /bin/bash
     # yamllint disable rule:line-length
@@ -382,8 +373,6 @@ services:
     restart: always
     depends_on:
       <<: *airflow-common-depends-on
-      airflow-init:
-        condition: service_completed_successfully
 
 volumes:
   postgres-db-volume:

@@ -5,6 +5,12 @@
 ########################################################################################################################
 
 .PHONY: first_init
+PYTHON_BIN = $(CURDIR)/.venv/bin/python
+FASTAPI_PYTHONPATH = fastapi/src:predict/src
+STREAMLIT_APP = dashboard/Accueil_des_dashboards.py
+AIRFLOW_RUNTIME_SERVICES = postgres redis airflow-dag-processor airflow-apiserver airflow-scheduler airflow-triggerer airflow-worker
+
+.PHONY: first_init
 firts_init :
 	pip install poetry
 	pip install pre-commit
@@ -23,11 +29,15 @@ setup :
 ########################################################################################################################
 .PHONY: start_fastapi
 start_fastapi:
-	PYTHONPATH=fastapi/src:predict/src python -m uvicorn mix_energy_api.main:app --reload --host 0.0.0.0 --port 8890
+	PYTHONPATH=$(FASTAPI_PYTHONPATH) $(PYTHON_BIN) -m uvicorn mix_energy_api.main:app --reload --host 0.0.0.0 --port 8890
 
 .PHONY: start_fastapi_dev
 start_fastapi_dev:
-	PYTHONPATH=fastapi/src:predict/src python -m uvicorn mix_energy_api.main:app --reload --host 0.0.0.0 --port 8890
+	PYTHONPATH=$(FASTAPI_PYTHONPATH) $(PYTHON_BIN) -m uvicorn mix_energy_api.main:app --reload --host 0.0.0.0 --port 8890
+
+.PHONY: start_streamlit
+start_streamlit:
+	cd $(CURDIR)/front-streamlit && FASTAPI_BASE_URL=$${FASTAPI_BASE_URL:-http://localhost:8890} $(PYTHON_BIN) -m streamlit run $(STREAMLIT_APP) --server.port 8501 --server.address 0.0.0.0
 
 ########################################################################################################################
 
@@ -64,9 +74,16 @@ build_local_airflow: build_predict
 build_local_streamlit:
 	cd ${PWD}/front-streamlit && docker build -t "mix-energie-streamlit" . && cd .. ;
 
+.PHONY: run_local_mlflow
+.PHONY: stop_local_mlflow
 .PHONY: start_mlflow_server
 start_mlflow_server:
-	mlflow server --host=0.0.0.0 --port=8503
+	$(AIRFLOW_COMPOSE) --profile mlflow up -d mlflow
+
+run_local_mlflow: start_mlflow_server
+
+stop_local_mlflow:
+	$(AIRFLOW_COMPOSE) stop mlflow
 
 .PHONY: run_local_fastapi
 run_local_fastapi:
@@ -82,15 +99,19 @@ run_local_fastapi:
 
 .PHONY: init_local_airflow
 init_local_airflow:
-	$(AIRFLOW_COMPOSE) up airflow-init
+	$(AIRFLOW_COMPOSE) --profile bootstrap run --rm airflow-init
 
 .PHONY: run_local_airflow
 run_local_airflow:
-	$(AIRFLOW_COMPOSE) up -d
+	$(AIRFLOW_COMPOSE) up -d $(AIRFLOW_RUNTIME_SERVICES)
+
+.PHONY: run_local_airflow_full
+run_local_airflow_full:
+	$(AIRFLOW_COMPOSE) --profile mlflow up -d mlflow $(AIRFLOW_RUNTIME_SERVICES)
 
 .PHONY: stop_local_airflow
 stop_local_airflow:
-	$(AIRFLOW_COMPOSE) down
+	$(AIRFLOW_COMPOSE) stop $(AIRFLOW_RUNTIME_SERVICES)
 
 .PHONY: run_local_streamlit
 run_local_streamlit:
