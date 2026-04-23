@@ -37,7 +37,7 @@ start_fastapi_dev:
 
 .PHONY: stop_fastapi
 stop_fastapi:
-	@pids="$$(pgrep -f 'mix_energy_api.main:app.*--port 8890' || true)"; \
+	@pids="$$(pgrep -f '[u]vicorn mix_energy_api.main:app.*--port 8890' || true)"; \
 	if [ -n "$$pids" ]; then \
 		kill $$pids; \
 		echo "Stopped local FastAPI process(es): $$pids"; \
@@ -51,7 +51,7 @@ start_streamlit:
 
 .PHONY: stop_streamlit
 stop_streamlit:
-	@pids="$$(pgrep -f 'streamlit run $(STREAMLIT_APP).*--server.port 8501' || true)"; \
+	@pids="$$(pgrep -f '[s]treamlit run $(STREAMLIT_APP).*--server.port 8501' || true)"; \
 	if [ -n "$$pids" ]; then \
 		kill $$pids; \
 		echo "Stopped local Streamlit process(es): $$pids"; \
